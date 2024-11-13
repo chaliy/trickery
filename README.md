@@ -2,9 +2,9 @@
 
 [![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/banner2-direct.svg)](https://vshymanskyy.github.io/StandWithUkraine/)
 
-`trickery` is a CLI tool to generate textual artifacts using LLM.
+CLI to generate textual artifacts using LLM.
 
-The idea is simple: imagine you need to generate some documentation as part of your CI process; this is the tool for you.
+The idea is simple: imagine you need to generate some documentation using LLM as part of CI; this is the tool for you.
 
 > [!TIP]
 > This README was generated with trickery
@@ -12,21 +12,18 @@ The idea is simple: imagine you need to generate some documentation as part of y
 
 ## How to install
 
-If you have Rust and Cargo installed, you can easily install `trickery` with:
+If you have Rust/Cargo installed, you can install `trickery` with:
 
-```bash
+```sh
 cargo install --git https://github.com/chaliy/trickery.git
 trickery --help
 ```
 
-### ZSH
+## How to use
 
-To enable autocomplete for `trickery` in ZSH, you can run:
-
-```bash
-trickery completion zsh > $ZSH/cache/completions/_trickery
-compinit
-trickery <TAB>
+```sh
+export OPENAI_API_KEY=s....d
+trickery generate -i ./prompts/trickery_readme.md > README.md
 ```
 
 ## Dad Joke

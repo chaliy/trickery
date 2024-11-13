@@ -11,7 +11,7 @@ Please generate a README.md using template below.
 
 cli to generate textual artifacts using LLM.
 
-Idea is simple, imagine you need to generate some docs as part of CI, this is a tool for you.
+Idea is simple, imagine you need to generate some docs using LLM as part of CI, this is a tool for you.
 
 > [!TIP]
 > This README was generated with trickery
@@ -21,19 +21,17 @@ Idea is simple, imagine you need to generate some docs as part of CI, this is a 
 
 If you have rust/cargo installed, you can install `trickery` with:
 
-```
+```sh
 cargo install --git https://github.com/chaliy/trickery.git
 trickery --help
 ```
 
-### ZSH
+## How to use
 
+```sh
+export OPENAI_API_KEY=s....d
+trickery generate -i ./prompts/trickery_readme.md > README.md
 ```
-trickery completion zsh > $ZSH/cache/completions/_trickery
-compinit
-trickery <TAB>
-```
-
 
 ## Dad Joke
 

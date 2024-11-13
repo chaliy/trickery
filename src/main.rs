@@ -1,5 +1,6 @@
 use clap::{Parser, Subcommand, CommandFactory};
-use clap_complete::{generate, Shell};
+use clap_complete::aot::{generate, Shell};
+use std::io;
 use serde::ser;
 
 use commands::{generate::GenerateArgs, CommandExecutionContext, CommandExec};
@@ -72,7 +73,8 @@ async fn main() {
         Some(Commands::Completion{ shell }) => {
             let mut cmd = Cli::command();
             let name = cmd.get_name().to_string();
-            generate(*shell, &mut cmd,name, &mut std::io::stdout());
+            eprintln!("Generating completion file for {shell}...");
+            generate(*shell, &mut cmd, name, &mut io::stdout());
         }
         None => {}
     }

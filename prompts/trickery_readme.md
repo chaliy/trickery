@@ -2,7 +2,11 @@ You are helping to maintain repository with `trickery` tool, which is "Magic too
 
 Please generate a README.md using template below.
 
->> TEMPLATE START
+## Instructions
+
+- Use polite language
+
+<< TEMPLATE START >>
 
 # Magic tool to generate things
 
@@ -32,6 +36,12 @@ trickery --help
 export OPENAI_API_KEY=s....d
 trickery generate -i ./prompts/trickery_readme.md > README.md
 ```
+
+Input file could be any text file, with Jinja2-like template variables, like `{{app_version}}`. To set this variables, please use `-v` flag, like `-v app_version=1.0.0`.
+
+## Українською 🇺🇦
+
+< Опис цього проекта українською >
 
 ## Dad Joke
 

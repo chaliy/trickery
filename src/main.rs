@@ -1,15 +1,14 @@
-use clap::{Parser, Subcommand, CommandFactory};
+use clap::{CommandFactory, Parser, Subcommand};
 use clap_complete::aot::{generate, Shell};
-use std::io;
 use serde::ser;
+use std::io;
 
-use commands::{generate::GenerateArgs, CommandExecutionContext, CommandExec};
+use commands::{generate::GenerateArgs, CommandExec, CommandExecutionContext};
 use output::write_command_stdout_as_json;
 
 mod commands;
 mod output;
 mod trickery;
-
 
 /// Magic tool to generate things
 #[derive(Parser)]
@@ -25,7 +24,7 @@ pub struct Cli {
 
 #[derive(clap::ValueEnum, Clone)]
 enum Output {
-   Json
+    Json,
 }
 
 #[derive(Subcommand)]
@@ -35,18 +34,20 @@ pub enum Commands {
     /// Outputs the completion file for given shell
     Completion {
         #[arg(index = 1, value_enum)]
-        shell: Shell
+        shell: Shell,
     },
 }
 
 impl Cli {
-    async fn exec_command<T>(&self, executor: &impl CommandExec<T>) 
-        where T: ser::Serialize {
+    async fn exec_command<T>(&self, executor: &impl CommandExec<T>)
+    where
+        T: ser::Serialize,
+    {
         let result = executor.exec(self).await.unwrap();
 
         match self.output {
             Some(Output::Json) => write_command_stdout_as_json(&result),
-            _ => ()
+            _ => (),
         }
     }
 
@@ -61,7 +62,6 @@ impl CommandExecutionContext for Cli {
     }
 }
 
-
 #[tokio::main]
 async fn main() {
     let cli = Cli::parse();
@@ -70,7 +70,7 @@ async fn main() {
         Some(Commands::Generate(args)) => {
             cli.exec_command(args).await;
         }
-        Some(Commands::Completion{ shell }) => {
+        Some(Commands::Completion { shell }) => {
             let mut cmd = Cli::command();
             let name = cmd.get_name().to_string();
             eprintln!("Generating completion file for {shell}...");

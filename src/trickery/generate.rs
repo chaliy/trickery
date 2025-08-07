@@ -1,28 +1,27 @@
-use langchain_rust::{
-    language_models::llm::LLM,
-    llm::openai::OpenAI,
-    prompt::{PromptFromatter, PromptTemplate, TemplateFormat},
-};
+use llm_chain::prompt::chat::{ChatPrompt, ChatPromptBuilder};
+use llm_chain::prompt::Prompt;
+use llm_chain::tools::Tool;
+use llm_chain::{executor, parameters, prompt};
 use serde_json::Value;
 use std::collections::HashMap;
 
 pub async fn generate_from_template(
     template: &str,
-    input_variables: HashMap<String, Value>,
+    input_variables: &HashMap<String, Value>,
 ) -> Result<String, Box<dyn std::error::Error>> {
-    let prompt_template = PromptTemplate::new(
-        template.to_string(),
-        input_variables.keys().cloned().collect(),
-        TemplateFormat::Jinja2,
-    );
-    let prompt = prompt_template.format(input_variables)?;
-
-    let response = generate(&prompt).await?;
-    Ok(response)
+    let mut p = prompt!(template);
+    for (k, v) in input_variables {
+        p = p.with_parameter(k, v.as_str().unwrap_or(""));
+    }
+    generate(p).await
 }
 
-pub async fn generate(prompt: &str) -> Result<String, Box<dyn std::error::Error>> {
-    let open_ai = OpenAI::default();
-    let response = open_ai.invoke(prompt).await?;
-    Ok(response)
+pub async fn generate<P: Prompt + Send + Sync>(
+    prompt: P,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let exec = executor!()?;
+    let res = exec.run(prompt, parameters!()).await?;
+    let output = res.to_string();
+    Ok(output)
 }
+

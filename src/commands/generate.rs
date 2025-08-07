@@ -60,7 +60,7 @@ impl CommandExec<GenerateResult> for GenerateArgs {
 
         let output = generate_from_template(&template, &input_variables).await?;
 
-        if context.get_cli().is_interactive() == true {
+        if context.get_cli().is_interactive() {
             println!("{}", output);
         };
 

@@ -3,7 +3,7 @@ use std::io::{stdout, Write};
 
 use crate::commands::CommandResult;
 
-pub(super) fn write_command_stdout_as_json<T>(result: &Box<dyn CommandResult<T>>)
+pub(super) fn write_command_stdout_as_json<T>(result: &dyn CommandResult<T>)
 where
     T: ser::Serialize,
 {

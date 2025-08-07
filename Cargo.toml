@@ -9,6 +9,6 @@ serde_json = "^1.0.132"
 llm-chain = "0.13.0"
 llm-chain-openai = "0.13.0"
 serde = { version = "^1.0.215", features = ["derive"] }
-tokio = "^1.47.1"
+tokio = { version = "^1.47.1", features = ["macros", "rt-multi-thread"] }
 clap_complete = "^4.5.55"
 

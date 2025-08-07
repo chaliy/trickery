@@ -17,11 +17,3 @@ pub async fn generate_from_template(
     Ok(output)
 }
 
-pub async fn generate(prompt: &str) -> Result<String, Box<dyn std::error::Error>> {
-    let exec = executor!()?;
-    let res = Step::for_prompt_template(prompt!(prompt))
-        .run(&parameters!(), &exec)
-        .await?;
-    let output = res.to_string();
-    Ok(output)
-}

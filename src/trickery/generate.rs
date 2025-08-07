@@ -14,14 +14,14 @@ pub async fn generate_from_template(
             acc.with(k, v.as_str().unwrap_or_default())
         });
     let exec = executor!()?;
-    let res = exec.execute(prompt, vars).await?;
+    let res = exec.invoke(prompt, &vars).await?;
     let output = res.to_string();
     Ok(output)
 }
 
 pub async fn generate(prompt: &str) -> Result<String, Box<dyn std::error::Error>> {
     let exec = executor!()?;
-    let res = exec.execute(prompt!(prompt), parameters!()).await?;
+    let res = exec.invoke(prompt!(prompt), &parameters!()).await?;
     let output = res.to_string();
     Ok(output)
 }

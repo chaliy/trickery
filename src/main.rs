@@ -45,7 +45,9 @@ impl Cli {
     {
         let result = executor.exec(self).await.unwrap();
 
-        if let Some(Output::Json) = self.output { write_command_stdout_as_json(&result) }
+        if let Some(Output::Json) = self.output {
+            write_command_stdout_as_json(&*result)
+        }
     }
 
     pub fn is_interactive(&self) -> bool {

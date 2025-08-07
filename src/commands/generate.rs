@@ -15,7 +15,7 @@ pub struct GenerateResult {
 
 impl CommandResult<GenerateResult> for GenerateResult {
     fn get_result(&self) -> &GenerateResult {
-        &self
+        self
     }
 }
 
@@ -60,13 +60,10 @@ impl CommandExec<GenerateResult> for GenerateArgs {
 
         let output = generate_from_template(&template, &input_variables).await?;
 
-        match context.get_cli().is_interactive() {
-            true => {
-                println!("{}", output);
-            }
-            false => (),
+        if context.get_cli().is_interactive() == true {
+            println!("{}", output);
         };
 
-        return Ok(Box::from(GenerateResult { output }));
+        Ok(Box::from(GenerateResult { output }))
     }
 }

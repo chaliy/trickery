@@ -1,4 +1,5 @@
 use llm_chain::{executor, parameters, prompt};
+use llm_chain::traits::Executor;
 use serde_json::Value;
 use std::collections::HashMap;
 

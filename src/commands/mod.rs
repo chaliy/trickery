@@ -1,6 +1,7 @@
 use crate::Cli;
 use serde::ser;
 
+pub mod agent;
 pub mod generate;
 
 pub trait CommandExecutionContext {

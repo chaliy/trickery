@@ -37,7 +37,7 @@ export OPENAI_API_KEY=s....d
 trickery generate -i ./prompts/trickery_readme.md > README.md
 ```
 
-Input file could be any text file, with Jinja2-like template variables, like `{{app_version}}`. To set this variables, please use `-v` flag, like `-v app_version=1.0.0`.
+Input file could be any text file, with Jinja2-like template variables, like `{{"{{app_version}}"}}`. To set this variables, please use `-v` flag, like `-v app_version=1.0.0`.
 
 ## Українською 🇺🇦
 
@@ -46,3 +46,6 @@ Input file could be any text file, with Jinja2-like template variables, like `{{
 ## Dad Joke
 
 < not funny dad joke >
+
+
+<< TEMPLATE END >>

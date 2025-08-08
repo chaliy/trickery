@@ -3,7 +3,9 @@ use clap_complete::aot::{generate, Shell};
 use serde::ser;
 use std::io;
 
-use commands::{generate::GenerateArgs, CommandExec, CommandExecutionContext};
+use commands::{
+    agent::AgentArgs, generate::GenerateArgs, CommandExec, CommandExecutionContext,
+};
 use output::write_command_stdout_as_json;
 
 mod commands;
@@ -31,6 +33,8 @@ enum Output {
 pub enum Commands {
     /// Generate content
     Generate(GenerateArgs),
+    /// Run agent
+    Agent(AgentArgs),
     /// Outputs the completion file for given shell
     Completion {
         #[arg(index = 1, value_enum)]
@@ -69,6 +73,9 @@ async fn main() {
         Some(Commands::Generate(args)) => {
             cli.exec_command(args).await;
         }
+        Some(Commands::Agent(args)) => {
+            cli.exec_command(args).await;
+        }
         Some(Commands::Completion { shell }) => {
             let mut cmd = Cli::command();
             let name = cmd.get_name().to_string();
@@ -83,3 +90,4 @@ async fn main() {
 fn verify_cli() {
     Cli::command().debug_assert();
 }
+

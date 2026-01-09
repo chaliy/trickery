@@ -79,4 +79,26 @@ Follow Conventional Commits format:
 
 ## PR conventions
 
-PR titles should follow Conventional Commits format.
+PR titles should follow Conventional Commits format: `<type>[optional scope]: <description>`
+
+### PR body template
+
+```markdown
+## What
+Clear description of the change.
+
+## Why
+Problem or motivation.
+
+## How
+High-level approach.
+
+## Risk
+- Low / Medium / High
+- What can break
+
+### Checklist
+- [ ] Unit tests are passed
+- [ ] Smoke tests are passed
+- [ ] Documentation is updated
+```

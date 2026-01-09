@@ -40,7 +40,7 @@ pub struct GenerateArgs {
     #[arg(short, long="var", value_parser = parse_key_val, number_of_values = 1)]
     vars: Vec<(String, Value)>,
 
-    /// Model to use (e.g., gpt-4o, gpt-4o-mini, o1, o3-mini)
+    /// Model to use (e.g., gpt-5.2, gpt-5-mini, o1, o3-mini)
     #[arg(short, long)]
     model: Option<String>,
 

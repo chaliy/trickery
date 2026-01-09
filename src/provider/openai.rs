@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use std::env;
 
 const DEFAULT_BASE_URL: &str = "https://api.openai.com/v1";
-const DEFAULT_MODEL: &str = "gpt-4o-mini";
+const DEFAULT_MODEL: &str = "gpt-5-mini";
 
 /// OpenAI API client
 pub struct OpenAIProvider {

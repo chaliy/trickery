@@ -8,6 +8,7 @@ use output::write_command_stdout_as_json;
 
 mod commands;
 mod output;
+mod provider;
 mod trickery;
 
 /// Magic tool to generate things

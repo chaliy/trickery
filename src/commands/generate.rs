@@ -3,8 +3,9 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use tokio::fs::read_to_string;
 
-use super::super::trickery::generate::generate_from_template;
+use super::super::trickery::generate::{generate_from_template, GenerateConfig};
 use super::{CommandExec, CommandResult};
+use crate::provider::ReasoningLevel;
 use serde_json::Value;
 use std::collections::HashMap;
 
@@ -38,6 +39,22 @@ pub struct GenerateArgs {
     /// Variables to be used in prompt
     #[arg(short, long="var", value_parser = parse_key_val, number_of_values = 1)]
     vars: Vec<(String, Value)>,
+
+    /// Model to use (e.g., gpt-4o, gpt-4o-mini, o1, o3-mini)
+    #[arg(short, long)]
+    model: Option<String>,
+
+    /// Reasoning level for o1/o3 models: low, medium, high
+    #[arg(short, long, value_parser = parse_reasoning_level)]
+    reasoning: Option<ReasoningLevel>,
+
+    /// Maximum tokens in response
+    #[arg(long)]
+    max_tokens: Option<u32>,
+}
+
+fn parse_reasoning_level(s: &str) -> Result<ReasoningLevel, String> {
+    s.parse()
 }
 
 impl CommandExec<GenerateResult> for GenerateArgs {
@@ -58,12 +75,55 @@ impl CommandExec<GenerateResult> for GenerateArgs {
 
         let template: String = read_to_string(input_path).await?;
 
-        let output = generate_from_template(&template, &input_variables).await?;
+        let config = GenerateConfig {
+            model: self.model.clone(),
+            reasoning_level: self.reasoning,
+            tools: None,
+            max_tokens: self.max_tokens,
+        };
+
+        let output = generate_from_template(&template, &input_variables, config).await?;
 
         if context.get_cli().is_interactive() {
             println!("{}", output);
         };
 
         Ok(Box::from(GenerateResult { output }))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_key_val() {
+        let (key, val) = parse_key_val("name=John").unwrap();
+        assert_eq!(key, "name");
+        assert_eq!(val, Value::String("John".to_string()));
+    }
+
+    #[test]
+    fn test_parse_key_val_with_equals_in_value() {
+        let (key, val) = parse_key_val("expr=a=b").unwrap();
+        assert_eq!(key, "expr");
+        assert_eq!(val, Value::String("a=b".to_string()));
+    }
+
+    #[test]
+    fn test_parse_key_val_error() {
+        let result = parse_key_val("no_equals");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_reasoning_level() {
+        assert_eq!(parse_reasoning_level("low").unwrap(), ReasoningLevel::Low);
+        assert_eq!(
+            parse_reasoning_level("medium").unwrap(),
+            ReasoningLevel::Medium
+        );
+        assert_eq!(parse_reasoning_level("high").unwrap(), ReasoningLevel::High);
+        assert!(parse_reasoning_level("invalid").is_err());
     }
 }

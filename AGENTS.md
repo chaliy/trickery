@@ -16,8 +16,9 @@ Critical Thinking Fix root cause (not band-aid). Unsure: read more code; if stil
 ## Top level requirements
 
 - CLI tool for generating textual artifacts using LLM
-- Uses llm-chain for LLM integration with OpenAI
+- Minimal self-contained OpenAI provider (no external LLM libraries)
 - Supports Jinja2-like template variables in prompts
+- Model selection and reasoning level configuration
 - Designed for CI/CD integration
 
 ## Local dev expectations
@@ -38,10 +39,15 @@ src/
 ├── commands/
 │   ├── mod.rs        # Command traits (CommandExec, CommandResult)
 │   └── generate.rs   # Generate command implementation
+├── provider/
+│   ├── mod.rs        # Provider abstraction types
+│   └── openai.rs     # OpenAI provider implementation
 └── trickery/
     ├── mod.rs
     └── generate.rs   # LLM template generation logic
 prompts/              # Example prompt templates
+test_cases/           # Test case templates for generate command
+specs/                # Feature specifications
 ```
 
 ## Naming
@@ -102,3 +108,13 @@ High-level approach.
 - [ ] Smoke tests are passed
 - [ ] Documentation is updated
 ```
+
+## Specs
+
+`specs/` folder contains feature specifications outlining requirements for specific features and components. New code should comply with these specifications or propose changes to them.
+
+Available specs:
+
+- `llm-provider.md` - LLM provider abstraction, OpenAI integration, design choices
+
+Specification format: Abstract and Requirements sections.

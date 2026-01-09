@@ -1,4 +1,4 @@
-Assistant: # Magic tool to generate things
+# Magic tool to generate things
 
 [![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/banner2-direct.svg)](https://vshymanskyy.github.io/StandWithUkraine/)
 

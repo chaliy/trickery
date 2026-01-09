@@ -22,4 +22,5 @@ base64 = "^0.22"
 
 [dev-dependencies]
 mockito = "^1.6"
+tempfile = "^3.15"
 

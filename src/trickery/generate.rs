@@ -120,6 +120,8 @@ pub async fn generate_from_template(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::Write;
+    use tempfile::NamedTempFile;
 
     #[test]
     fn test_substitute_variables() {
@@ -171,5 +173,145 @@ mod tests {
         };
         assert_eq!(config.images, Some(vec!["test.png".to_string()]));
         assert_eq!(config.image_detail, Some("high".to_string()));
+    }
+
+    // Image URL tests
+    #[test]
+    fn test_image_to_url_http_passthrough() {
+        let url = "http://example.com/image.png";
+        let result = image_to_url(url).unwrap();
+        assert_eq!(result, url);
+    }
+
+    #[test]
+    fn test_image_to_url_https_passthrough() {
+        let url = "https://example.com/path/to/image.jpg";
+        let result = image_to_url(url).unwrap();
+        assert_eq!(result, url);
+    }
+
+    #[test]
+    fn test_image_to_url_local_png() {
+        let mut file = NamedTempFile::with_suffix(".png").unwrap();
+        let test_data = vec![0x89, 0x50, 0x4E, 0x47]; // PNG magic bytes
+        file.write_all(&test_data).unwrap();
+
+        let result = image_to_url(file.path().to_str().unwrap()).unwrap();
+        assert!(result.starts_with("data:image/png;base64,"));
+        // Verify the base64 content decodes correctly
+        let base64_part = result.strip_prefix("data:image/png;base64,").unwrap();
+        let decoded = BASE64.decode(base64_part).unwrap();
+        assert_eq!(decoded, test_data);
+    }
+
+    #[test]
+    fn test_image_to_url_local_jpeg() {
+        let mut file = NamedTempFile::with_suffix(".jpg").unwrap();
+        let test_data = vec![0xFF, 0xD8, 0xFF]; // JPEG magic bytes
+        file.write_all(&test_data).unwrap();
+
+        let result = image_to_url(file.path().to_str().unwrap()).unwrap();
+        assert!(result.starts_with("data:image/jpeg;base64,"));
+    }
+
+    #[test]
+    fn test_image_to_url_local_jpeg_extension() {
+        let mut file = NamedTempFile::with_suffix(".jpeg").unwrap();
+        let test_data = vec![0xFF, 0xD8, 0xFF];
+        file.write_all(&test_data).unwrap();
+
+        let result = image_to_url(file.path().to_str().unwrap()).unwrap();
+        assert!(result.starts_with("data:image/jpeg;base64,"));
+    }
+
+    #[test]
+    fn test_image_to_url_local_gif() {
+        let mut file = NamedTempFile::with_suffix(".gif").unwrap();
+        let test_data = vec![0x47, 0x49, 0x46, 0x38]; // GIF magic bytes
+        file.write_all(&test_data).unwrap();
+
+        let result = image_to_url(file.path().to_str().unwrap()).unwrap();
+        assert!(result.starts_with("data:image/gif;base64,"));
+    }
+
+    #[test]
+    fn test_image_to_url_local_webp() {
+        let mut file = NamedTempFile::with_suffix(".webp").unwrap();
+        let test_data = vec![0x52, 0x49, 0x46, 0x46]; // RIFF header
+        file.write_all(&test_data).unwrap();
+
+        let result = image_to_url(file.path().to_str().unwrap()).unwrap();
+        assert!(result.starts_with("data:image/webp;base64,"));
+    }
+
+    #[test]
+    fn test_image_to_url_unknown_extension_defaults_to_png() {
+        let mut file = NamedTempFile::with_suffix(".unknown").unwrap();
+        let test_data = vec![0x00, 0x01, 0x02];
+        file.write_all(&test_data).unwrap();
+
+        let result = image_to_url(file.path().to_str().unwrap()).unwrap();
+        assert!(result.starts_with("data:image/png;base64,"));
+    }
+
+    #[test]
+    fn test_image_to_url_nonexistent_file() {
+        let result = image_to_url("/nonexistent/path/to/image.png");
+        assert!(result.is_err());
+    }
+
+    // Multimodal message construction tests
+    #[test]
+    fn test_multimodal_message_with_image_url() {
+        let parts = vec![
+            ContentPart::text("Describe this image"),
+            ContentPart::ImageUrl {
+                image_url: ImageUrl {
+                    url: "https://example.com/image.png".to_string(),
+                    detail: Some("high".to_string()),
+                },
+            },
+        ];
+        let message = Message::user_parts(parts);
+
+        assert_eq!(message.role, crate::provider::Role::User);
+        let content = message.content.unwrap();
+        assert_eq!(content.len(), 2);
+
+        match &content[0] {
+            ContentPart::Text { text } => assert_eq!(text, "Describe this image"),
+            _ => panic!("Expected text part"),
+        }
+
+        match &content[1] {
+            ContentPart::ImageUrl { image_url } => {
+                assert_eq!(image_url.url, "https://example.com/image.png");
+                assert_eq!(image_url.detail, Some("high".to_string()));
+            }
+            _ => panic!("Expected image URL part"),
+        }
+    }
+
+    #[test]
+    fn test_multimodal_message_multiple_images() {
+        let parts = vec![
+            ContentPart::text("Compare these images"),
+            ContentPart::ImageUrl {
+                image_url: ImageUrl {
+                    url: "https://example.com/image1.png".to_string(),
+                    detail: Some("auto".to_string()),
+                },
+            },
+            ContentPart::ImageUrl {
+                image_url: ImageUrl {
+                    url: "https://example.com/image2.png".to_string(),
+                    detail: Some("auto".to_string()),
+                },
+            },
+        ];
+        let message = Message::user_parts(parts);
+
+        let content = message.content.unwrap();
+        assert_eq!(content.len(), 3);
     }
 }

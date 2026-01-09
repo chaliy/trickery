@@ -57,9 +57,13 @@ pub enum Role {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ContentPart {
-    Text { text: String },
+    Text {
+        text: String,
+    },
     #[allow(dead_code)] // For future image support
-    ImageUrl { image_url: ImageUrl },
+    ImageUrl {
+        image_url: ImageUrl,
+    },
 }
 
 /// Image URL for vision models
@@ -294,7 +298,12 @@ mod tests {
     #[test]
     fn test_content_part_text() {
         let part = ContentPart::text("Hello");
-        assert_eq!(part, ContentPart::Text { text: "Hello".to_string() });
+        assert_eq!(
+            part,
+            ContentPart::Text {
+                text: "Hello".to_string()
+            }
+        );
     }
 
     #[test]

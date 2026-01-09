@@ -1,5 +1,5 @@
 use crate::provider::openai::OpenAIProvider;
-use crate::provider::{substitute_variables, CompletionRequest, Message, ReasoningLevel, Tool};
+use crate::provider::{CompletionRequest, Message, ReasoningLevel, Tool};
 use serde_json::Value;
 use std::collections::HashMap;
 
@@ -12,6 +12,21 @@ pub struct GenerateConfig {
     pub max_tokens: Option<u32>,
 }
 
+/// Substitute Jinja2-style template variables {{ var }} with values.
+/// This is done BEFORE sending to the LLM provider.
+pub fn substitute_variables(template: &str, variables: &HashMap<String, Value>) -> String {
+    let mut result = template.to_string();
+    for (key, value) in variables {
+        let placeholder = format!("{{{{ {} }}}}", key);
+        let replacement = match value {
+            Value::String(s) => s.clone(),
+            other => other.to_string(),
+        };
+        result = result.replace(&placeholder, &replacement);
+    }
+    result
+}
+
 /// Generate text from template with variable substitution.
 /// Uses OpenAI provider by default.
 pub async fn generate_from_template(
@@ -19,7 +34,7 @@ pub async fn generate_from_template(
     input_variables: &HashMap<String, Value>,
     config: GenerateConfig,
 ) -> Result<String, Box<dyn std::error::Error>> {
-    // Substitute template variables
+    // Substitute template variables BEFORE sending to provider
     let prompt_text = substitute_variables(template, input_variables);
 
     // Create provider and request
@@ -53,6 +68,25 @@ pub async fn generate_from_template(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_substitute_variables() {
+        let mut vars = HashMap::new();
+        vars.insert("name".to_string(), Value::String("World".to_string()));
+        vars.insert("count".to_string(), serde_json::json!(42));
+
+        let template = "Hello {{ name }}! Count: {{ count }}";
+        let result = substitute_variables(template, &vars);
+        assert_eq!(result, "Hello World! Count: 42");
+    }
+
+    #[test]
+    fn test_substitute_variables_missing() {
+        let vars = HashMap::new();
+        let template = "Hello {{ name }}!";
+        let result = substitute_variables(template, &vars);
+        assert_eq!(result, "Hello {{ name }}!"); // unchanged
+    }
 
     #[test]
     fn test_generate_config_default() {

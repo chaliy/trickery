@@ -2,8 +2,8 @@
 // Env vars: OPENAI_API_KEY (required), OPENAI_BASE_URL (optional, default: https://api.openai.com/v1)
 
 use super::{
-    CompletionRequest, CompletionResponse, FunctionCall, ProviderError, ReasoningLevel, Tool,
-    ToolCall, Usage,
+    CompletionRequest, CompletionResponse, ContentPart, FunctionCall, ProviderError,
+    ReasoningLevel, Tool, ToolCall, Usage,
 };
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -27,7 +27,8 @@ impl OpenAIProvider {
     pub fn from_env() -> Result<Self, ProviderError> {
         let api_key = env::var("OPENAI_API_KEY")
             .map_err(|_| ProviderError::MissingApiKey("OPENAI_API_KEY".to_string()))?;
-        let base_url = env::var("OPENAI_BASE_URL").unwrap_or_else(|_| DEFAULT_BASE_URL.to_string());
+        let base_url =
+            env::var("OPENAI_BASE_URL").unwrap_or_else(|_| DEFAULT_BASE_URL.to_string());
 
         Ok(Self {
             client: Client::new(),
@@ -119,10 +120,9 @@ impl OpenAIProvider {
         }
 
         let api_response: OpenAIResponse = response.json().await?;
-        let choice =
-            api_response.choices.into_iter().next().ok_or_else(|| {
-                ProviderError::InvalidResponse("No choices in response".to_string())
-            })?;
+        let choice = api_response.choices.into_iter().next().ok_or_else(|| {
+            ProviderError::InvalidResponse("No choices in response".to_string())
+        })?;
 
         Ok(CompletionResponse {
             content: choice.message.content,
@@ -168,15 +168,31 @@ struct OpenAIRequest {
     reasoning_effort: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+/// OpenAI message with content as array of parts
+#[derive(Debug, Serialize)]
 struct OpenAIMessage {
     role: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    content: Option<String>,
+    content: Option<Vec<OpenAIContentPart>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     tool_calls: Option<Vec<OpenAIToolCall>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     tool_call_id: Option<String>,
+}
+
+/// Content part in OpenAI format
+#[derive(Debug, Serialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+enum OpenAIContentPart {
+    Text { text: String },
+    ImageUrl { image_url: OpenAIImageUrl },
+}
+
+#[derive(Debug, Serialize)]
+struct OpenAIImageUrl {
+    url: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    detail: Option<String>,
 }
 
 impl OpenAIMessage {
@@ -188,7 +204,22 @@ impl OpenAIMessage {
                 super::Role::Assistant => "assistant".to_string(),
                 super::Role::Tool => "tool".to_string(),
             },
-            content: msg.content.clone(),
+            content: msg.content.as_ref().map(|parts| {
+                parts
+                    .iter()
+                    .map(|p| match p {
+                        ContentPart::Text { text } => OpenAIContentPart::Text {
+                            text: text.clone(),
+                        },
+                        ContentPart::ImageUrl { image_url } => OpenAIContentPart::ImageUrl {
+                            image_url: OpenAIImageUrl {
+                                url: image_url.url.clone(),
+                                detail: image_url.detail.clone(),
+                            },
+                        },
+                    })
+                    .collect()
+            }),
             tool_calls: msg.tool_calls.as_ref().map(|calls| {
                 calls
                     .iter()
@@ -205,6 +236,15 @@ impl OpenAIMessage {
             tool_call_id: msg.tool_call_id.clone(),
         }
     }
+}
+
+/// Response message (can have string content)
+#[derive(Debug, Deserialize)]
+struct OpenAIResponseMessage {
+    #[allow(dead_code)]
+    role: String,
+    content: Option<String>,
+    tool_calls: Option<Vec<OpenAIToolCall>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -256,7 +296,7 @@ struct OpenAIResponse {
 
 #[derive(Debug, Deserialize)]
 struct OpenAIChoice {
-    message: OpenAIMessage,
+    message: OpenAIResponseMessage,
     finish_reason: Option<String>,
 }
 
@@ -293,7 +333,21 @@ mod tests {
         let msg = super::super::Message::user("Hello");
         let openai_msg = OpenAIMessage::from_message(&msg);
         assert_eq!(openai_msg.role, "user");
-        assert_eq!(openai_msg.content, Some("Hello".to_string()));
+        let content = openai_msg.content.unwrap();
+        assert_eq!(content.len(), 1);
+        match &content[0] {
+            OpenAIContentPart::Text { text } => assert_eq!(text, "Hello"),
+            _ => panic!("Expected text content"),
+        }
+    }
+
+    #[test]
+    fn test_openai_message_serialization() {
+        let msg = super::super::Message::user("Hello world");
+        let openai_msg = OpenAIMessage::from_message(&msg);
+        let json = serde_json::to_string(&openai_msg).unwrap();
+        assert!(json.contains(r#""type":"text""#));
+        assert!(json.contains(r#""text":"Hello world""#));
     }
 
     #[test]

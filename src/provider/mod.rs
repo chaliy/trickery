@@ -1,10 +1,10 @@
 // Provider abstraction for LLM backends (OpenAI, Anthropic, Gemini).
 // Design: Each provider implements the Provider trait with its own client.
+// Note: Provider only handles API contract, no template processing.
 
 pub mod openai;
 
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -53,11 +53,45 @@ pub enum Role {
     Tool,
 }
 
-/// A message in the conversation
+/// Content part in a message (OpenAI format)
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum ContentPart {
+    Text { text: String },
+    #[allow(dead_code)] // For future image support
+    ImageUrl { image_url: ImageUrl },
+}
+
+/// Image URL for vision models
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ImageUrl {
+    pub url: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub detail: Option<String>,
+}
+
+impl ContentPart {
+    pub fn text(text: impl Into<String>) -> Self {
+        Self::Text { text: text.into() }
+    }
+
+    #[allow(dead_code)] // For future image support
+    pub fn image_url(url: impl Into<String>) -> Self {
+        Self::ImageUrl {
+            image_url: ImageUrl {
+                url: url.into(),
+                detail: None,
+            },
+        }
+    }
+}
+
+/// A message in the conversation (OpenAI format with content parts)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Message {
     pub role: Role,
-    pub content: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub content: Option<Vec<ContentPart>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tool_calls: Option<Vec<ToolCall>>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -69,7 +103,7 @@ impl Message {
     pub fn system(content: impl Into<String>) -> Self {
         Self {
             role: Role::System,
-            content: Some(content.into()),
+            content: Some(vec![ContentPart::text(content)]),
             tool_calls: None,
             tool_call_id: None,
         }
@@ -78,7 +112,18 @@ impl Message {
     pub fn user(content: impl Into<String>) -> Self {
         Self {
             role: Role::User,
-            content: Some(content.into()),
+            content: Some(vec![ContentPart::text(content)]),
+            tool_calls: None,
+            tool_call_id: None,
+        }
+    }
+
+    /// Create user message with multiple content parts
+    #[allow(dead_code)] // Part of public API for future providers
+    pub fn user_parts(parts: Vec<ContentPart>) -> Self {
+        Self {
+            role: Role::User,
+            content: Some(parts),
             tool_calls: None,
             tool_call_id: None,
         }
@@ -88,10 +133,25 @@ impl Message {
     pub fn tool_result(tool_call_id: impl Into<String>, content: impl Into<String>) -> Self {
         Self {
             role: Role::Tool,
-            content: Some(content.into()),
+            content: Some(vec![ContentPart::text(content)]),
             tool_calls: None,
             tool_call_id: Some(tool_call_id.into()),
         }
+    }
+
+    /// Get text content as string (concatenates all text parts)
+    #[allow(dead_code)]
+    pub fn text_content(&self) -> Option<String> {
+        self.content.as_ref().map(|parts| {
+            parts
+                .iter()
+                .filter_map(|p| match p {
+                    ContentPart::Text { text } => Some(text.as_str()),
+                    _ => None,
+                })
+                .collect::<Vec<_>>()
+                .join("")
+        })
     }
 }
 
@@ -210,48 +270,9 @@ pub struct Usage {
     pub total_tokens: u32,
 }
 
-/// Template variable substitution
-pub fn substitute_variables(
-    template: &str,
-    variables: &HashMap<String, serde_json::Value>,
-) -> String {
-    let mut result = template.to_string();
-    for (key, value) in variables {
-        let placeholder = format!("{{{{ {} }}}}", key);
-        let replacement = match value {
-            serde_json::Value::String(s) => s.clone(),
-            other => other.to_string(),
-        };
-        result = result.replace(&placeholder, &replacement);
-    }
-    result
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_substitute_variables() {
-        let mut vars = HashMap::new();
-        vars.insert(
-            "name".to_string(),
-            serde_json::Value::String("World".to_string()),
-        );
-        vars.insert("count".to_string(), serde_json::json!(42));
-
-        let template = "Hello {{ name }}! Count: {{ count }}";
-        let result = substitute_variables(template, &vars);
-        assert_eq!(result, "Hello World! Count: 42");
-    }
-
-    #[test]
-    fn test_substitute_variables_missing() {
-        let vars = HashMap::new();
-        let template = "Hello {{ name }}!";
-        let result = substitute_variables(template, &vars);
-        assert_eq!(result, "Hello {{ name }}!"); // unchanged
-    }
 
     #[test]
     fn test_reasoning_level_from_str() {
@@ -271,17 +292,39 @@ mod tests {
     }
 
     #[test]
+    fn test_content_part_text() {
+        let part = ContentPart::text("Hello");
+        assert_eq!(part, ContentPart::Text { text: "Hello".to_string() });
+    }
+
+    #[test]
     fn test_message_constructors() {
         let sys = Message::system("You are helpful");
         assert_eq!(sys.role, Role::System);
-        assert_eq!(sys.content, Some("You are helpful".to_string()));
+        assert_eq!(sys.text_content(), Some("You are helpful".to_string()));
 
         let user = Message::user("Hello");
         assert_eq!(user.role, Role::User);
-        assert_eq!(user.content, Some("Hello".to_string()));
+        assert_eq!(user.text_content(), Some("Hello".to_string()));
 
         let tool = Message::tool_result("call_123", "result");
         assert_eq!(tool.role, Role::Tool);
         assert_eq!(tool.tool_call_id, Some("call_123".to_string()));
+    }
+
+    #[test]
+    fn test_message_content_parts() {
+        let msg = Message::user_parts(vec![
+            ContentPart::text("Hello "),
+            ContentPart::text("World"),
+        ]);
+        assert_eq!(msg.text_content(), Some("Hello World".to_string()));
+    }
+
+    #[test]
+    fn test_content_part_serialization() {
+        let part = ContentPart::text("Hello");
+        let json = serde_json::to_string(&part).unwrap();
+        assert_eq!(json, r#"{"type":"text","text":"Hello"}"#);
     }
 }

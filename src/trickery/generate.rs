@@ -1,7 +1,9 @@
 use crate::provider::openai::OpenAIProvider;
-use crate::provider::{CompletionRequest, Message, ReasoningLevel, Tool};
+use crate::provider::{CompletionRequest, ContentPart, ImageUrl, Message, ReasoningLevel, Tool};
+use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use serde_json::Value;
 use std::collections::HashMap;
+use std::path::Path;
 
 /// Configuration for template generation
 #[derive(Debug, Clone, Default)]
@@ -10,6 +12,36 @@ pub struct GenerateConfig {
     pub reasoning_level: Option<ReasoningLevel>,
     pub tools: Option<Vec<Tool>>,
     pub max_tokens: Option<u32>,
+    /// Image paths or URLs to include in the prompt
+    pub images: Option<Vec<String>>,
+    /// Image detail level: auto, low, high
+    pub image_detail: Option<String>,
+}
+
+/// Convert an image path or URL to a format suitable for the API.
+/// Local files are converted to base64 data URLs.
+/// URLs starting with http:// or https:// are passed through unchanged.
+fn image_to_url(image_path: &str) -> Result<String, Box<dyn std::error::Error>> {
+    // If it's already a URL, return as-is
+    if image_path.starts_with("http://") || image_path.starts_with("https://") {
+        return Ok(image_path.to_string());
+    }
+
+    // It's a local file path - read and encode as base64
+    let path = Path::new(image_path);
+    let data = std::fs::read(path)?;
+
+    // Detect MIME type from extension
+    let mime_type = match path.extension().and_then(|e| e.to_str()) {
+        Some("png") => "image/png",
+        Some("jpg") | Some("jpeg") => "image/jpeg",
+        Some("gif") => "image/gif",
+        Some("webp") => "image/webp",
+        _ => "image/png", // Default to PNG
+    };
+
+    let encoded = BASE64.encode(&data);
+    Ok(format!("data:{};base64,{}", mime_type, encoded))
 }
 
 /// Substitute Jinja2-style template variables {{ var }} with values.
@@ -40,7 +72,27 @@ pub async fn generate_from_template(
     // Create provider and request
     let provider = OpenAIProvider::from_env()?;
 
-    let mut request = CompletionRequest::new(vec![Message::user(prompt_text)]);
+    // Build message - use multimodal if images provided
+    let message = if let Some(ref images) = config.images {
+        let detail = config.image_detail.clone();
+        let mut parts = vec![ContentPart::text(&prompt_text)];
+
+        for image_path in images {
+            let url = image_to_url(image_path)?;
+            parts.push(ContentPart::ImageUrl {
+                image_url: ImageUrl {
+                    url,
+                    detail: detail.clone(),
+                },
+            });
+        }
+
+        Message::user_parts(parts)
+    } else {
+        Message::user(prompt_text)
+    };
+
+    let mut request = CompletionRequest::new(vec![message]);
 
     if let Some(model) = config.model {
         request = request.with_model(model);
@@ -103,8 +155,21 @@ mod tests {
             reasoning_level: Some(ReasoningLevel::High),
             tools: None,
             max_tokens: Some(1000),
+            images: None,
+            image_detail: None,
         };
         assert_eq!(config.model, Some("gpt-4o".to_string()));
         assert_eq!(config.reasoning_level, Some(ReasoningLevel::High));
+    }
+
+    #[test]
+    fn test_generate_config_with_images() {
+        let config = GenerateConfig {
+            images: Some(vec!["test.png".to_string()]),
+            image_detail: Some("high".to_string()),
+            ..Default::default()
+        };
+        assert_eq!(config.images, Some(vec!["test.png".to_string()]));
+        assert_eq!(config.image_detail, Some("high".to_string()));
     }
 }

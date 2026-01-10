@@ -29,7 +29,8 @@ fn image_to_url(image_path: &str) -> Result<String, Box<dyn std::error::Error>> 
 
     // It's a local file path - read and encode as base64
     let path = Path::new(image_path);
-    let data = std::fs::read(path)?;
+    let data = std::fs::read(path)
+        .map_err(|e| format!("Failed to read image file '{}': {}", image_path, e))?;
 
     // Detect MIME type from extension
     let mime_type = match path.extension().and_then(|e| e.to_str()) {

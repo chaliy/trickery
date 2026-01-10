@@ -108,3 +108,113 @@ CompletionRequest::new(messages)
     .with_tools(tools)
     .with_max_tokens(1000)
 ```
+
+## Responses API (Image Generation)
+
+The provider also supports OpenAI's Responses API for image generation using the `image_generation` tool.
+
+### Endpoint
+
+- `POST /v1/responses` - Create response with image generation tool
+
+### Supported Features
+
+1. **Image Generation** - Create images from text prompts
+2. **Image Editing** - Modify existing images with instructions
+3. **Size Options** - auto, 1024x1024, 1024x1536, 1536x1024
+4. **Quality Levels** - auto, low, medium, high
+5. **Output Formats** - png, jpeg, webp
+6. **Background** - auto, transparent, opaque
+7. **Action Control** - auto, generate, edit
+
+### Default Behavior
+
+- Default model: `gpt-4.1` (uses GPT Image models internally)
+- Size defaults to `auto`
+- Quality defaults to `auto`
+- Format defaults to `png`
+
+### Request Structure
+
+```rust
+ResponsesRequest::new(prompt)
+    .with_model("gpt-4.1")
+    .with_images(vec!["data:image/png;base64,...".to_string()])
+    .with_options(ImageGenerationOptions {
+        size: Some(ImageSize::Square),
+        quality: Some(ImageQuality::High),
+        output_format: Some(ImageFormat::Png),
+        background: Some(ImageBackground::Transparent),
+        action: Some(ImageAction::Auto),
+        compression: Some(100),
+    })
+```
+
+### API Request Format
+
+```json
+{
+  "model": "gpt-4.1",
+  "input": "Draw a cat",
+  "tools": [{
+    "type": "image_generation",
+    "size": "1024x1024",
+    "quality": "high",
+    "output_format": "png"
+  }]
+}
+```
+
+With input images:
+```json
+{
+  "model": "gpt-4.1",
+  "input": [{
+    "role": "user",
+    "content": [
+      {"type": "input_text", "text": "Edit this image..."},
+      {"type": "input_image", "image_url": "data:image/png;base64,..."}
+    ]
+  }],
+  "tools": [{"type": "image_generation"}]
+}
+```
+
+### Response Structure
+
+```json
+{
+  "id": "resp_123",
+  "output": [{
+    "type": "image_generation_call",
+    "id": "ig_456",
+    "result": "base64_encoded_image_data",
+    "revised_prompt": "A cute tabby cat..."
+  }]
+}
+```
+
+### Provider Abstraction Types
+
+```rust
+pub enum ImageSize { Auto, Square, Portrait, Landscape }
+pub enum ImageQuality { Auto, Low, Medium, High }
+pub enum ImageFormat { Png, Jpeg, Webp }
+pub enum ImageBackground { Auto, Transparent, Opaque }
+pub enum ImageAction { Auto, Generate, Edit }
+
+pub struct ImageGenerationOptions {
+    pub size: Option<ImageSize>,
+    pub quality: Option<ImageQuality>,
+    pub output_format: Option<ImageFormat>,
+    pub background: Option<ImageBackground>,
+    pub action: Option<ImageAction>,
+    pub compression: Option<u8>,
+}
+
+pub struct ImageGenerationResult {
+    pub id: String,
+    pub result: String,  // base64 image data
+    pub revised_prompt: Option<String>,
+}
+```

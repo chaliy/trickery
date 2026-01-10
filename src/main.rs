@@ -3,7 +3,7 @@ use clap_complete::aot::{generate, Shell};
 use serde::ser;
 use std::io;
 
-use commands::{generate::GenerateArgs, CommandExec, CommandExecutionContext};
+use commands::{generate::GenerateArgs, image::ImageArgs, CommandExec, CommandExecutionContext};
 use output::write_command_stdout_as_json;
 
 mod commands;
@@ -33,6 +33,8 @@ enum Output {
 pub enum Commands {
     /// Generate content
     Generate(GenerateArgs),
+    /// Generate or edit images
+    Image(ImageArgs),
     /// Outputs the completion file for given shell
     Completion {
         #[arg(index = 1, value_enum)]
@@ -75,6 +77,9 @@ async fn main() {
 
     match &cli.command {
         Some(Commands::Generate(args)) => {
+            cli.exec_command(args).await;
+        }
+        Some(Commands::Image(args)) => {
             cli.exec_command(args).await;
         }
         Some(Commands::Completion { shell }) => {

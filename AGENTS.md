@@ -38,16 +38,19 @@ src/
 ├── output.rs         # JSON output utilities
 ├── commands/
 │   ├── mod.rs        # Command traits (CommandExec, CommandResult)
-│   └── generate.rs   # Generate command implementation
+│   ├── generate.rs   # Generate command implementation
+│   └── image.rs      # Image generation command implementation
 ├── provider/
-│   ├── mod.rs        # Provider abstraction types
+│   ├── mod.rs        # Provider abstraction types (Chat + Responses API)
 │   └── openai.rs     # OpenAI provider implementation
 └── trickery/
     ├── mod.rs
-    └── generate.rs   # LLM template generation logic
+    ├── generate.rs   # LLM template generation logic
+    └── image.rs      # Image generation logic
 prompts/              # Example prompt templates
 test_cases/           # Test case templates for generate command
 specs/                # Feature specifications
+docs/                 # Feature documentation
 ```
 
 ## Naming

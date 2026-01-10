@@ -58,8 +58,8 @@ pub struct ImageArgs {
     input: Option<PathBuf>,
 
     /// Output file path for the generated image
-    #[arg(short, long, value_hint = ValueHint::FilePath)]
-    output: PathBuf,
+    #[arg(long = "out", value_hint = ValueHint::FilePath)]
+    out_file: PathBuf,
 
     /// Variables to be used in prompt
     #[arg(short, long="var", value_parser = parse_key_val, number_of_values = 1)]
@@ -137,10 +137,10 @@ impl CommandExec<ImageResult> for ImageArgs {
             compression: self.compression,
         };
 
-        let result = generate_image(&template, &input_variables, config, &self.output).await?;
+        let result = generate_image(&template, &input_variables, config, &self.out_file).await?;
 
         if context.get_cli().is_interactive() {
-            println!("Image saved to: {}", self.output.display());
+            println!("Image saved to: {}", self.out_file.display());
             if let Some(ref revised) = result.revised_prompt {
                 println!("Revised prompt: {}", revised);
             }

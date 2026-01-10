@@ -31,6 +31,16 @@ export OPENAI_API_KEY=s....d
 trickery generate -i ./prompts/trickery_readme.md > README.md
 ```
 
+### Using with OpenAI-compatible gateways
+
+You can use trickery with any OpenAI-compatible API gateway (like LiteLLM, Azure OpenAI, or local models) by setting the `OPENAI_BASE_URL` environment variable:
+
+```sh
+export OPENAI_API_KEY=your-key
+export OPENAI_BASE_URL=http://localhost:4000/v1
+trickery generate -i ./prompts/my_prompt.md
+```
+
 Input file could be any text file, with Jinja2-like template variables, like `{{"{{app_version}}"}}`. To set this variables, please use `-v` flag, like `-v app_version=1.0.0`.
 
 ## Українською 🇺🇦

@@ -21,6 +21,11 @@ Idea is simple, imagine you need to generate some docs using LLM as part of CI, 
 > This README was generated with trickery
 > trickery generate -i ./prompts/trickery_readme.md > README.md
 
+
+## Demo
+
+![Demo Screenshot](/docs/images/images.png)
+
 ## How to install
 
 If you have rust/cargo installed, you can install `trickery` with:

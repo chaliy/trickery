@@ -27,8 +27,7 @@ impl OpenAIProvider {
     pub fn from_env() -> Result<Self, ProviderError> {
         let api_key = env::var("OPENAI_API_KEY")
             .map_err(|_| ProviderError::MissingApiKey("OPENAI_API_KEY".to_string()))?;
-        let base_url =
-            env::var("OPENAI_BASE_URL").unwrap_or_else(|_| DEFAULT_BASE_URL.to_string());
+        let base_url = env::var("OPENAI_BASE_URL").unwrap_or_else(|_| DEFAULT_BASE_URL.to_string());
 
         Ok(Self {
             client: Client::new(),
@@ -120,9 +119,10 @@ impl OpenAIProvider {
         }
 
         let api_response: OpenAIResponse = response.json().await?;
-        let choice = api_response.choices.into_iter().next().ok_or_else(|| {
-            ProviderError::InvalidResponse("No choices in response".to_string())
-        })?;
+        let choice =
+            api_response.choices.into_iter().next().ok_or_else(|| {
+                ProviderError::InvalidResponse("No choices in response".to_string())
+            })?;
 
         Ok(CompletionResponse {
             content: choice.message.content,
@@ -208,9 +208,9 @@ impl OpenAIMessage {
                 parts
                     .iter()
                     .map(|p| match p {
-                        ContentPart::Text { text } => OpenAIContentPart::Text {
-                            text: text.clone(),
-                        },
+                        ContentPart::Text { text } => {
+                            OpenAIContentPart::Text { text: text.clone() }
+                        }
                         ContentPart::ImageUrl { image_url } => OpenAIContentPart::ImageUrl {
                             image_url: OpenAIImageUrl {
                                 url: image_url.url.clone(),

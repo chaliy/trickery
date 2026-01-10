@@ -31,13 +31,17 @@ fn parse_key_val(s: &str) -> Result<(String, Value), String> {
 }
 
 #[derive(Args)]
+#[command(
+    args_conflicts_with_subcommands = true,
+    override_usage = "trickery generate [INPUT] [OPTIONS]"
+)]
 pub struct GenerateArgs {
     /// Input prompt: file path or direct text (auto-detected)
-    #[arg(index = 1, value_hint = ValueHint::FilePath)]
+    #[arg(index = 1, value_name = "INPUT", value_hint = ValueHint::FilePath)]
     pub input_positional: Option<String>,
 
     /// Input prompt: file path or direct text (auto-detected)
-    #[arg(short, long = "input", value_hint = ValueHint::FilePath)]
+    #[arg(short, long = "input", value_name = "INPUT", value_hint = ValueHint::FilePath)]
     pub input_option: Option<String>,
 
     /// Variables to be used in prompt

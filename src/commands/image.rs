@@ -92,13 +92,14 @@ fn generate_output_filename(input: Option<&str>, format: Option<&ImageFormat>) -
 }
 
 #[derive(Args)]
+#[command(override_usage = "trickery image [INPUT] [OPTIONS]")]
 pub struct ImageArgs {
     /// Input prompt: file path or direct text (auto-detected)
-    #[arg(index = 1, value_hint = ValueHint::FilePath)]
+    #[arg(index = 1, value_name = "INPUT", value_hint = ValueHint::FilePath)]
     pub input_positional: Option<String>,
 
     /// Input prompt: file path or direct text (auto-detected)
-    #[arg(short, long = "input", value_hint = ValueHint::FilePath)]
+    #[arg(short, long = "input", value_name = "INPUT", value_hint = ValueHint::FilePath)]
     pub input_option: Option<String>,
 
     /// Output file path for the generated image (auto-generated if not provided)

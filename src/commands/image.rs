@@ -52,11 +52,12 @@ fn parse_image_action(s: &str) -> Result<ImageAction, String> {
     s.parse()
 }
 
-/// Generate output filename from input path with random suffix.
-/// E.g., "prompts/diagram.md" -> "diagram-a3f5x.png"
-fn generate_output_filename(input_path: &Path, format: Option<&ImageFormat>) -> PathBuf {
+/// Generate output filename with random suffix.
+/// Uses input path stem if provided, otherwise defaults to "image".
+/// E.g., "prompts/diagram.md" -> "diagram-a3f5x.png", or None -> "image-a3f5x.png"
+fn generate_output_filename(input_path: Option<&Path>, format: Option<&ImageFormat>) -> PathBuf {
     let stem = input_path
-        .file_stem()
+        .and_then(|p| p.file_stem())
         .and_then(|s| s.to_str())
         .unwrap_or("image");
 
@@ -79,15 +80,19 @@ fn generate_output_filename(input_path: &Path, format: Option<&ImageFormat>) -> 
 pub struct ImageArgs {
     /// Path to the input prompt file
     #[arg(short, long, value_hint = ValueHint::FilePath)]
-    input: Option<PathBuf>,
+    pub input: Option<PathBuf>,
+
+    /// Direct text input (alternative to --input file)
+    #[arg(short, long)]
+    pub text: Option<String>,
 
     /// Output file path for the generated image (auto-generated if not provided)
     #[arg(short, long, value_hint = ValueHint::FilePath)]
-    save: Option<PathBuf>,
+    pub save: Option<PathBuf>,
 
     /// Variables to be used in prompt
     #[arg(short, long="var", value_parser = parse_key_val, number_of_values = 1)]
-    vars: Vec<(String, Value)>,
+    pub vars: Vec<(String, Value)>,
 
     /// Model to use (e.g., gpt-4.1, gpt-5, gpt-5.2)
     #[arg(short, long)]
@@ -127,9 +132,17 @@ impl CommandExec<ImageResult> for ImageArgs {
         &self,
         context: &impl super::CommandExecutionContext,
     ) -> Result<Box<dyn CommandResult<ImageResult>>, Box<dyn std::error::Error>> {
-        let input_path = match &self.input {
-            Some(path) => path,
-            None => return Err("Input file path is required".into()),
+        let template: String = match (&self.input, &self.text) {
+            (Some(path), None) => read_to_string(path)
+                .await
+                .map_err(|e| format!("Failed to read input file '{}': {}", path.display(), e))?,
+            (None, Some(text)) => text.clone(),
+            (Some(_), Some(_)) => {
+                return Err("Cannot specify both --input and --text".into());
+            }
+            (None, None) => {
+                return Err("Either --input or --text is required".into());
+            }
         };
 
         let input_variables: HashMap<String, Value> = self
@@ -137,14 +150,6 @@ impl CommandExec<ImageResult> for ImageArgs {
             .iter()
             .map(|(k, v)| (k.clone(), v.clone()))
             .collect();
-
-        let template: String = read_to_string(input_path).await.map_err(|e| {
-            format!(
-                "Failed to read input file '{}': {}",
-                input_path.display(),
-                e
-            )
-        })?;
 
         let config = ImageConfig {
             model: self.model.clone(),
@@ -164,7 +169,7 @@ impl CommandExec<ImageResult> for ImageArgs {
         // Use provided save path or auto-generate from input filename
         let output_path = match &self.save {
             Some(path) => path.clone(),
-            None => generate_output_filename(input_path, self.format.as_ref()),
+            None => generate_output_filename(self.input.as_deref(), self.format.as_ref()),
         };
 
         let result = generate_image(&template, &input_variables, config, &output_path).await?;
@@ -249,7 +254,7 @@ mod tests {
     #[test]
     fn test_generate_output_filename_default_format() {
         let input = Path::new("prompts/diagram.md");
-        let output = generate_output_filename(input, None);
+        let output = generate_output_filename(Some(input), None);
         let filename = output.to_str().unwrap();
 
         // Should start with stem from input
@@ -263,7 +268,7 @@ mod tests {
     #[test]
     fn test_generate_output_filename_jpeg_format() {
         let input = Path::new("icon.md");
-        let output = generate_output_filename(input, Some(&ImageFormat::Jpeg));
+        let output = generate_output_filename(Some(input), Some(&ImageFormat::Jpeg));
         let filename = output.to_str().unwrap();
 
         assert!(filename.starts_with("icon-"));
@@ -273,7 +278,7 @@ mod tests {
     #[test]
     fn test_generate_output_filename_webp_format() {
         let input = Path::new("test.md");
-        let output = generate_output_filename(input, Some(&ImageFormat::Webp));
+        let output = generate_output_filename(Some(input), Some(&ImageFormat::Webp));
         let filename = output.to_str().unwrap();
 
         assert!(filename.starts_with("test-"));
@@ -283,10 +288,30 @@ mod tests {
     #[test]
     fn test_generate_output_filename_uniqueness() {
         let input = Path::new("test.md");
-        let output1 = generate_output_filename(input, None);
-        let output2 = generate_output_filename(input, None);
+        let output1 = generate_output_filename(Some(input), None);
+        let output2 = generate_output_filename(Some(input), None);
 
         // Should generate different filenames (random suffix)
         assert_ne!(output1, output2);
+    }
+
+    #[test]
+    fn test_generate_output_filename_no_input() {
+        let output = generate_output_filename(None, None);
+        let filename = output.to_str().unwrap();
+
+        // Should use default "image" stem
+        assert!(filename.starts_with("image-"));
+        assert!(filename.ends_with(".png"));
+        assert_eq!(filename.len(), "image-xxxxx.png".len());
+    }
+
+    #[test]
+    fn test_generate_output_filename_no_input_webp() {
+        let output = generate_output_filename(None, Some(&ImageFormat::Webp));
+        let filename = output.to_str().unwrap();
+
+        assert!(filename.starts_with("image-"));
+        assert!(filename.ends_with(".webp"));
     }
 }

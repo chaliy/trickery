@@ -34,11 +34,15 @@ fn parse_key_val(s: &str) -> Result<(String, Value), String> {
 pub struct GenerateArgs {
     /// Path to the input prompt file
     #[arg(short, long, value_hint = ValueHint::FilePath)]
-    input: Option<PathBuf>,
+    pub input: Option<PathBuf>,
+
+    /// Direct text input (alternative to --input file)
+    #[arg(short, long)]
+    pub text: Option<String>,
 
     /// Variables to be used in prompt
     #[arg(short, long="var", value_parser = parse_key_val, number_of_values = 1)]
-    vars: Vec<(String, Value)>,
+    pub vars: Vec<(String, Value)>,
 
     /// Model to use (e.g., gpt-5.2, gpt-5-mini, o1, o3-mini)
     #[arg(short, long)]
@@ -70,9 +74,17 @@ impl CommandExec<GenerateResult> for GenerateArgs {
         &self,
         context: &impl super::CommandExecutionContext,
     ) -> Result<Box<dyn CommandResult<GenerateResult>>, Box<dyn std::error::Error>> {
-        let input_path = match &self.input {
-            Some(path) => path,
-            None => return Err("Input file path is required".into()),
+        let template: String = match (&self.input, &self.text) {
+            (Some(path), None) => read_to_string(path)
+                .await
+                .map_err(|e| format!("Failed to read input file '{}': {}", path.display(), e))?,
+            (None, Some(text)) => text.clone(),
+            (Some(_), Some(_)) => {
+                return Err("Cannot specify both --input and --text".into());
+            }
+            (None, None) => {
+                return Err("Either --input or --text is required".into());
+            }
         };
 
         let input_variables: HashMap<String, Value> = self
@@ -80,14 +92,6 @@ impl CommandExec<GenerateResult> for GenerateArgs {
             .iter()
             .map(|(k, v)| (k.clone(), v.clone()))
             .collect();
-
-        let template: String = read_to_string(input_path).await.map_err(|e| {
-            format!(
-                "Failed to read input file '{}': {}",
-                input_path.display(),
-                e
-            )
-        })?;
 
         let images: Vec<String> = self.image.clone();
 

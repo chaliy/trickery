@@ -35,6 +35,10 @@ fn parse_key_val(s: &str) -> Result<(String, Value), String> {
 
 #[derive(Args)]
 pub struct GenerateArgs {
+    /// Prompt text (alternative to --input file)
+    #[arg(value_name = "PROMPT")]
+    prompt: Option<String>,
+
     /// Path to the input prompt file
     #[arg(short, long, value_hint = ValueHint::FilePath)]
     input: Option<PathBuf>,
@@ -82,9 +86,14 @@ impl CommandExec<GenerateResult> for GenerateArgs {
         &self,
         context: &impl super::CommandExecutionContext,
     ) -> Result<Box<dyn CommandResult<GenerateResult>>, Box<dyn std::error::Error>> {
-        let input_path = match &self.input {
-            Some(path) => path,
-            None => return Err("Input file path is required".into()),
+        // Get template from either prompt string or input file
+        let template: String = match (&self.prompt, &self.input) {
+            (Some(prompt), None) => prompt.clone(),
+            (None, Some(path)) => read_to_string(path)
+                .await
+                .map_err(|e| format!("Failed to read input file '{}': {}", path.display(), e))?,
+            (Some(_), Some(_)) => return Err("Cannot specify both PROMPT and --input".into()),
+            (None, None) => return Err("Either PROMPT or --input is required".into()),
         };
 
         let input_variables: HashMap<String, Value> = self
@@ -92,14 +101,6 @@ impl CommandExec<GenerateResult> for GenerateArgs {
             .iter()
             .map(|(k, v)| (k.clone(), v.clone()))
             .collect();
-
-        let template: String = read_to_string(input_path).await.map_err(|e| {
-            format!(
-                "Failed to read input file '{}': {}",
-                input_path.display(),
-                e
-            )
-        })?;
 
         let images: Vec<String> = self.image.clone();
 

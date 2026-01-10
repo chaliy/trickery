@@ -148,10 +148,19 @@ cargo install trickery
 
 ### generate - Generate content from prompts
 
-Generate text content from a prompt template file.
+Generate text content from a prompt string or template file.
+
+**Usage:**
+```bash
+trickery generate "PROMPT" [OPTIONS]
+trickery generate -i <FILE> [OPTIONS]
+```
+
+**Arguments:**
+- `PROMPT`: Prompt text (alternative to --input file)
 
 **Options:**
-- `-i, --input <FILE>`: Path to the input prompt file (required)
+- `-i, --input <FILE>`: Path to the input prompt file
 - `-v, --var <KEY=VALUE>`: Variables to be used in prompt (can be repeated)
 - `-m, --model <MODEL>`: Model to use (e.g., gpt-5.2, gpt-5-mini, o1, o3-mini)
 - `-r, --reasoning <LEVEL>`: Reasoning level for o1/o3 models: low, medium, high
@@ -167,27 +176,26 @@ Generate text content from a prompt template file.
 **Examples:**
 
 ```bash
-# Basic generation from a prompt file
+# Quick inline prompt
+trickery generate "Tell me a joke"
+
+# With tool calling
+trickery generate "Tell a dad joke about the current time" --tool current_time
+
+# From a prompt file
 trickery generate -i prompts/greeting.md
 
 # With template variables
 trickery generate -i prompts/email.md --var name=John --var topic="Project Update"
 
 # Using a specific model
-trickery generate -i prompts/code.md -m gpt-5.2
+trickery generate "Explain quantum computing" -m gpt-5.2
 
 # With reasoning (for o1/o3 models)
 trickery generate -i prompts/analysis.md -m o3-mini -r high
 
 # JSON output for CI/CD
-trickery generate -i prompts/data.md -o json
-
-# Multimodal with image input
-trickery generate -i prompts/describe.md --image photo.jpg
-trickery generate -i prompts/compare.md --image img1.png --image img2.png
-
-# With tool calling (agentic mode)
-trickery generate -i prompts/time-aware.md --tool current_time
+trickery generate "Hello world" -o json
 ```
 
 ### image - Generate or edit images

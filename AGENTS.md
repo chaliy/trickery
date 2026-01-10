@@ -118,3 +118,34 @@ Available specs:
 - `llm-provider.md` - LLM provider abstraction, OpenAI integration, design choices
 
 Specification format: Abstract and Requirements sections.
+
+## Test Cases
+
+`test_cases/` folder contains manual smoke test cases for validating CLI functionality. Run these after changes to verify behavior.
+
+Available test cases:
+
+- `basic_generation.md` - Simple prompt generation without variables
+- `template_variables.md` - Jinja2-style variable substitution
+- `json_output.md` - JSON output format flag
+- `image_multimodal.md` - Image input for multimodal prompts
+- `error_handling.md` - Error scenarios and messages
+
+### Test case template
+
+```markdown
+# Test: <Name>
+
+## Abstract
+<One sentence describing what this test validates>
+
+## Prerequisites
+- `cargo install --path .`
+- <Other required setup, env vars, files>
+
+## Steps
+
+### 1. <Step name>
+**Run:** `trickery <command>`
+**Expect:** <Expected outcome>
+```

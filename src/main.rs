@@ -180,12 +180,6 @@ trickery generate prompts/greeting.md
 # Direct text input
 trickery generate "Write a haiku about programming"
 
-# Long text with shell quoting
-trickery generate "You are a helpful assistant.
-
-Explain the following concept in simple terms:
-What is machine learning and how does it work?"
-
 # With template variables
 trickery generate prompts/email.md --var name=John --var topic="Project Update"
 trickery generate "Hello {{ name }}!" --var name=Alice

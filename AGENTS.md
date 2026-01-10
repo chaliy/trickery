@@ -76,6 +76,7 @@ CI is implemented using GitHub Actions (`.github/workflows/ci.yaml`):
 4. Build: Ensure `cargo build` succeeds
 5. Full help: If CLI options changed, update `print_full_help()` in `src/main.rs`
 6. Lockfile: Run `cargo update --workspace` after version bumps or dependency changes to sync Cargo.lock
+7. README: If README needs changes, update `prompts/trickery_readme.md` and regenerate with `trickery generate ./prompts/trickery_readme.md > README.md`
 
 ## Commit message conventions
 

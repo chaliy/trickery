@@ -4,7 +4,8 @@ Coding Agent friendly tool to magically generate text and images.
 
 [![CI](https://github.com/chaliy/trickery/actions/workflows/ci.yaml/badge.svg)](https://github.com/chaliy/trickery/actions/workflows/ci.yaml)
 [![Crates.io](https://img.shields.io/crates/v/trickery)](https://crates.io/crates/trickery)
-[![Coding Agent Friendly](https://img.shields.io/badge/coding%20agent-friendly-brightgreen)](specs/coding-agent-design.md)
+[![Tool: Agent Friendly](https://img.shields.io/badge/tool-agent%20friendly-brightgreen)](specs/coding-agent-design.md)
+[![Repo: Agent Friendly](https://img.shields.io/badge/repo-agent%20friendly-blue)](AGENTS.md)
 
 [![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/banner2-direct.svg)](https://vshymanskyy.github.io/StandWithUkraine/)
 

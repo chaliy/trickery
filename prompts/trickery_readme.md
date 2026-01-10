@@ -44,6 +44,11 @@ trickery generate -i ./prompts/trickery_readme.md > README.md
 
 Input file could be any text file, with Jinja2-like template variables, like `{{"{{app_version}}"}}`. To set this variables, please use `-v` flag, like `-v app_version=1.0.0`.
 
+## Documentation
+
+- [Input Images](docs/input-images.md) - Using images in multimodal prompts
+- [Image Generation](docs/image-generation.md) - Generating and editing images
+
 ## Українською 🇺🇦
 
 < Опис цього проекта українською >

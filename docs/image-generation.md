@@ -4,9 +4,9 @@ Trickery supports generating and editing images using OpenAI's Responses API wit
 
 ## CLI Arguments
 
-### `--input <PATH>` / `-i <PATH>`
+### `[INPUT]` (positional) or `-i <INPUT>`
 
-Path to the prompt template file. Supports Jinja2-style `{{ variable }}` substitution.
+Input prompt: file path or direct text (auto-detected). Supports Jinja2-style `{{ variable }}` substitution when using a file.
 
 ### `--save <PATH>` / `-s <PATH>` (optional)
 
@@ -80,13 +80,13 @@ Template variables for prompt substitution.
 
 ```bash
 # Simple generation with explicit filename
-trickery image -i prompts/generate_diagram.md --save docs/images/colorful-architecture.png
+trickery image prompts/generate_diagram.md --save docs/images/colorful-architecture.png
 
 # Auto-generated filename (e.g., generate_diagram-a3f5x.png)
-trickery image -i prompts/generate_diagram.md
+trickery image prompts/generate_diagram.md
 
 # With quality settings
-trickery image -i prompts/generate_diagram.md -s architecture.png \
+trickery image prompts/generate_diagram.md -s architecture.png \
   --size 1536x1024 \
   --quality high
 ```
@@ -101,12 +101,12 @@ See [prompts/generate_diagram.md](../prompts/generate_diagram.md) for the prompt
 
 ```bash
 # Make an image look realistic
-trickery image -i prompts/make_realistic.md \
+trickery image prompts/make_realistic.md \
   --image test_data/example_images/image1.png \
   --save output.png
 
 # Edit with custom instruction
-trickery image -i prompts/edit_image.md \
+trickery image prompts/edit_image.md \
   --image test_data/example_images/image2.png \
   --save modified.png \
   -v instruction="make it green on pink"
@@ -117,7 +117,7 @@ See [prompts/make_realistic.md](../prompts/make_realistic.md) and [prompts/edit_
 ### Highlight Areas in Image
 
 ```bash
-trickery image -i prompts/highlight_humans.md \
+trickery image prompts/highlight_humans.md \
   --image test_data/example_images/image3.jpg \
   --save highlighted.png
 ```
@@ -127,7 +127,7 @@ See [prompts/highlight_humans.md](../prompts/highlight_humans.md) for the prompt
 ### With Template Variables
 
 ```bash
-trickery image -i prompts/generate_icon.md \
+trickery image prompts/generate_icon.md \
   --save icon.png \
   -v subject="rocket" \
   -v style="flat design"
@@ -139,7 +139,7 @@ See [prompts/generate_icon.md](../prompts/generate_icon.md) for the prompt templ
 
 ```bash
 # Combine elements from multiple images
-trickery image -i prompts/edit_image.md \
+trickery image prompts/edit_image.md \
   --image test_data/example_images/image1.png \
   --image test_data/example_images/image2.png \
   --save composite.png \
@@ -149,7 +149,7 @@ trickery image -i prompts/edit_image.md \
 ### Transparent Background
 
 ```bash
-trickery image -i prompts/generate_icon.md \
+trickery image prompts/generate_icon.md \
   --save logo.png \
   --background transparent \
   --format png \
@@ -160,7 +160,7 @@ trickery image -i prompts/generate_icon.md \
 ### JSON Output
 
 ```bash
-trickery image -i prompts/generate_diagram.md --save result.png -o json
+trickery image prompts/generate_diagram.md --save result.png -o json
 ```
 
 Output:

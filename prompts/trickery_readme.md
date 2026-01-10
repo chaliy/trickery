@@ -19,7 +19,7 @@ Idea is simple, imagine you need to generate some docs using LLM as part of CI, 
 
 > [!TIP]
 > This README was generated with trickery
-> trickery generate -i ./prompts/trickery_readme.md > README.md
+> trickery generate ./prompts/trickery_readme.md > README.md
 
 
 ## Demo
@@ -39,7 +39,7 @@ trickery --help
 
 ```sh
 export OPENAI_API_KEY=s....d
-trickery generate -i ./prompts/trickery_readme.md > README.md
+trickery generate ./prompts/trickery_readme.md > README.md
 ```
 
 Input file could be any text file, with Jinja2-like template variables, like `{{"{{app_version}}"}}`. To set this variables, please use `-v` flag, like `-v app_version=1.0.0`.

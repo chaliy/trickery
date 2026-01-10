@@ -120,6 +120,7 @@ High-level approach.
 Available specs:
 
 - `llm-provider.md` - LLM provider abstraction, OpenAI integration, design choices
+- `text-input.md` - Direct text input via --text option, alternative to file input
 
 Specification format: Abstract and Requirements sections.
 
@@ -135,6 +136,7 @@ Available test cases:
 - `image_multimodal.md` - Image input for multimodal prompts
 - `image_generate.md` - Image generation and editing command
 - `error_handling.md` - Error scenarios and messages
+- `text_input.md` - Direct text input via --text option
 
 ### Test case template
 

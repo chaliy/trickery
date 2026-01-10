@@ -34,7 +34,7 @@ Unknown extensions default to PNG MIME type.
 ### Single Local Image
 
 ```bash
-trickery generate -i prompts/describe_image.md --image test_data/example_images/image2.png
+trickery generate prompts/describe_image.md --image test_data/example_images/image2.png
 ```
 
 Where `prompts/describe_image.md` contains:
@@ -45,13 +45,13 @@ Describe what you see in this image in detail.
 ### Image from URL
 
 ```bash
-trickery generate -i prompts/describe_image.md --image https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png
+trickery generate prompts/describe_image.md --image https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png
 ```
 
 ### Multiple Images
 
 ```bash
-trickery generate -i prompts/catalog_images.md \
+trickery generate prompts/catalog_images.md \
   --image test_data/example_images/image1.png \
   --image test_data/example_images/image2.png \
   --image test_data/example_images/image3.jpg
@@ -61,13 +61,13 @@ trickery generate -i prompts/catalog_images.md \
 
 ```bash
 # Low detail for quick classification
-trickery generate -i prompts/describe_image.md --image test_data/example_images/image1.png --image-detail low
+trickery generate prompts/describe_image.md --image test_data/example_images/image1.png --image-detail low
 ```
 
 ### Combined with Variables
 
 ```bash
-trickery generate -i prompts/review_ui.md \
+trickery generate prompts/review_ui.md \
   --image test_data/example_images/image2.png \
   --var focus="accessibility" \
   --var format="bullet points"
@@ -100,7 +100,7 @@ Image support requires a vision-capable model. Recommended models:
 
 Example with explicit model:
 ```bash
-trickery generate -i prompts/describe_image.md --image test_data/example_images/image1.png --model gpt-5.2
+trickery generate prompts/describe_image.md --image test_data/example_images/image1.png --model gpt-5.2
 ```
 
 ## Token Considerations

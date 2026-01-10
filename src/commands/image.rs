@@ -94,8 +94,12 @@ fn generate_output_filename(input: Option<&str>, format: Option<&ImageFormat>) -
 #[derive(Args)]
 pub struct ImageArgs {
     /// Input prompt: file path or direct text (auto-detected)
-    #[arg(short, long, value_hint = ValueHint::FilePath)]
-    pub input: Option<String>,
+    #[arg(index = 1, value_hint = ValueHint::FilePath)]
+    pub input_positional: Option<String>,
+
+    /// Input prompt: file path or direct text (auto-detected)
+    #[arg(short, long = "input", value_hint = ValueHint::FilePath)]
+    pub input_option: Option<String>,
 
     /// Output file path for the generated image (auto-generated if not provided)
     #[arg(short, long, value_hint = ValueHint::FilePath)]
@@ -138,15 +142,23 @@ pub struct ImageArgs {
     compression: Option<u8>,
 }
 
+impl ImageArgs {
+    /// Get input from either positional or -i option
+    pub fn get_input(&self) -> Option<&String> {
+        self.input_positional
+            .as_ref()
+            .or(self.input_option.as_ref())
+    }
+}
+
 impl CommandExec<ImageResult> for ImageArgs {
     async fn exec(
         &self,
         context: &impl super::CommandExecutionContext,
     ) -> Result<Box<dyn CommandResult<ImageResult>>, Box<dyn std::error::Error>> {
         let input = self
-            .input
-            .as_ref()
-            .ok_or("--input is required (file path or text)")?;
+            .get_input()
+            .ok_or("Input required: use positional arg or -i (file path or text)")?;
 
         let template = resolve_input(input).await?;
 

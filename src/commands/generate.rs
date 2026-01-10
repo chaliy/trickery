@@ -33,8 +33,12 @@ fn parse_key_val(s: &str) -> Result<(String, Value), String> {
 #[derive(Args)]
 pub struct GenerateArgs {
     /// Input prompt: file path or direct text (auto-detected)
-    #[arg(short, long, value_hint = ValueHint::FilePath)]
-    pub input: Option<String>,
+    #[arg(index = 1, value_hint = ValueHint::FilePath)]
+    pub input_positional: Option<String>,
+
+    /// Input prompt: file path or direct text (auto-detected)
+    #[arg(short, long = "input", value_hint = ValueHint::FilePath)]
+    pub input_option: Option<String>,
 
     /// Variables to be used in prompt
     #[arg(short, long="var", value_parser = parse_key_val, number_of_values = 1)]
@@ -78,15 +82,23 @@ async fn resolve_input(input: &str) -> Result<String, Box<dyn std::error::Error>
     }
 }
 
+impl GenerateArgs {
+    /// Get input from either positional or -i option
+    pub fn get_input(&self) -> Option<&String> {
+        self.input_positional
+            .as_ref()
+            .or(self.input_option.as_ref())
+    }
+}
+
 impl CommandExec<GenerateResult> for GenerateArgs {
     async fn exec(
         &self,
         context: &impl super::CommandExecutionContext,
     ) -> Result<Box<dyn CommandResult<GenerateResult>>, Box<dyn std::error::Error>> {
         let input = self
-            .input
-            .as_ref()
-            .ok_or("--input is required (file path or text)")?;
+            .get_input()
+            .ok_or("Input required: use positional arg or -i (file path or text)")?;
 
         let template = resolve_input(input).await?;
 

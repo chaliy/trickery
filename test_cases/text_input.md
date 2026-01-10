@@ -1,7 +1,7 @@
-# Test: Text Input (Auto-Detection)
+# Test: Text Input (Positional and -i Flag)
 
 ## Abstract
-Validates that --input auto-detects file paths vs direct text input.
+Validates that input works as positional argument and with -i flag, with auto-detection of file vs text.
 
 ## Prerequisites
 - `OPENAI_API_KEY` environment variable set
@@ -9,22 +9,34 @@ Validates that --input auto-detects file paths vs direct text input.
 
 ## Steps
 
-### 1. Text input (generate)
+### 1. Positional text input (generate)
+**Run:** `trickery generate "Tell me a short joke"`
+**Expect:** LLM response with a joke
+
+### 2. Flag text input (generate)
 **Run:** `trickery generate -i "Tell me a short joke"`
-**Expect:** LLM response with a joke (input treated as text since no such file exists)
+**Expect:** Same result as positional
 
-### 2. File input (generate)
+### 3. Positional file input (generate)
+**Run:** `trickery generate prompts/dad_jokes.md`
+**Expect:** LLM response based on file content
+
+### 4. Flag file input (generate)
 **Run:** `trickery generate -i prompts/dad_jokes.md`
-**Expect:** LLM response based on file content (file exists, so reads from it)
+**Expect:** Same result as positional file input
 
-### 3. Text input (image)
-**Run:** `trickery image -i "A simple red circle on white background" -s /tmp/test_circle.png`
+### 5. Positional text input (image)
+**Run:** `trickery image "A red circle" -s /tmp/test_circle.png`
 **Expect:** Image saved to /tmp/test_circle.png
 
-### 4. Multi-line text input
+### 6. Flag text input (image)
+**Run:** `trickery image -i "A red circle" -s /tmp/test_circle2.png`
+**Expect:** Image saved to /tmp/test_circle2.png
+
+### 7. Multi-line text input
 **Run:**
 ```bash
-trickery generate -i "You are a poet.
+trickery generate "You are a poet.
 
 Write a haiku about:
 - The moon
@@ -32,40 +44,34 @@ Write a haiku about:
 ```
 **Expect:** Haiku response
 
-### 5. Text with template variables
-**Run:** `trickery generate -i "Hello {{ name }}, you work at {{ company }}." --var name=Alice --var company=Acme`
-**Expect:** Response references "Alice" and "Acme"
+### 8. Positional with template variables
+**Run:** `trickery generate "Hello {{ name }}!" --var name=Alice`
+**Expect:** Response references "Alice"
 
-### 6. Long text input
+### 9. Long text input
 **Run:**
 ```bash
-trickery generate -i "$(cat <<'EOF'
-You are a technical writer. Please summarize the following:
+trickery generate "$(cat <<'EOF'
+You are a technical writer. Please summarize:
 
-1. Rust is a systems programming language focused on safety.
-2. It prevents null pointer exceptions through its ownership system.
-3. The borrow checker ensures memory safety at compile time.
-4. Cargo is the package manager and build system.
-5. Crates are Rust packages published to crates.io.
+1. Rust is a systems programming language.
+2. It prevents null pointer exceptions.
+3. Cargo is the package manager.
 
 Provide a 2-sentence summary.
 EOF
 )"
 ```
-**Expect:** 2-sentence summary of Rust features
+**Expect:** 2-sentence summary
 
-### 7. Error: missing --input
+### 10. Error: missing input
 **Run:** `trickery generate`
-**Expect:** Error about missing --input
+**Expect:** Error about missing input
 
-### 8. Image with text and auto-generated filename
-**Run:** `trickery image -i "Blue square"`
-**Expect:** Image saved to image-xxxxx.png (auto-generated filename, not based on input text)
-
-### 9. Text input with JSON output
-**Run:** `trickery generate -i "Say hello" -o json`
-**Expect:** JSON output with "output" field
-
-### 10. Text input with model selection
-**Run:** `trickery generate -i "Count to 5" -m gpt-4o-mini`
+### 11. Positional with model selection
+**Run:** `trickery generate "Count to 5" -m gpt-4o-mini`
 **Expect:** Response with numbers 1-5
+
+### 12. Positional with JSON output
+**Run:** `trickery generate "Say hello" -o json`
+**Expect:** JSON output with "output" field

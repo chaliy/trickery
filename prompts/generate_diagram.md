@@ -1,7 +1,7 @@
-Draw a simple system architecture diagram showing:
+Draw a system architecture diagram showing:
 - A web browser (client)
 - An API server
 - A database
 
-Use clean boxes with labels and arrows showing data flow.
-Style: minimalist, professional, black and white.
+Use fun cartoon-style boxes with labels and arrows showing data flow.
+Style: colorful, playful, cartoonish with glowing magical sparkles around the components.

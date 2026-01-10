@@ -2,6 +2,7 @@
 name = "trickery"
 version = "0.1.1"
 edition = "2021"
+rust-version = "1.75"
 description = "CLI tool for generating textual artifacts using LLM"
 authors = ["Mykhailo Chalyi"]
 license-file = "LICENSE"

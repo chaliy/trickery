@@ -140,15 +140,12 @@ Available test cases:
 <One sentence describing what this test validates>
 
 ## Prerequisites
-- <Required setup, env vars, files>
+- `cargo install --path .`
+- <Other required setup, env vars, files>
 
 ## Steps
 
 ### 1. <Step name>
-**Run:** `<command>`
-**Expect:** <Expected outcome>
-
-### 2. <Step name>
-**Run:** `<command>`
+**Run:** `trickery <command>`
 **Expect:** <Expected outcome>
 ```

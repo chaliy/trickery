@@ -72,6 +72,7 @@ CI is implemented using GitHub Actions (`.github/workflows/ci.yaml`):
 2. Linting: Run `cargo clippy` and fix warnings
 3. Tests: Ensure `cargo test` passes
 4. Build: Ensure `cargo build` succeeds
+5. Full help: If CLI options changed, update `print_full_help()` in `src/main.rs`
 
 ## Commit message conventions
 

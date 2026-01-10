@@ -7,6 +7,7 @@ use commands::{generate::GenerateArgs, CommandExec, CommandExecutionContext};
 use output::write_command_stdout_as_json;
 
 mod commands;
+mod error;
 mod output;
 mod provider;
 mod trickery;
@@ -44,10 +45,16 @@ impl Cli {
     where
         T: ser::Serialize,
     {
-        let result = executor.exec(self).await.unwrap();
-
-        if let Some(Output::Json) = self.output {
-            write_command_stdout_as_json(&*result)
+        match executor.exec(self).await {
+            Ok(result) => {
+                if let Some(Output::Json) = self.output {
+                    write_command_stdout_as_json(&*result)
+                }
+            }
+            Err(err) => {
+                error::print_error(err.as_ref());
+                std::process::exit(1);
+            }
         }
     }
 

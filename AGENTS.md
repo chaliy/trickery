@@ -15,11 +15,13 @@ Critical Thinking Fix root cause (not band-aid). Unsure: read more code; if stil
 
 ## Top level requirements
 
-- CLI tool for generating textual artifacts using LLM
+- Coding Agent friendly tool to magically generate text and images
+- CLI for generating textual and visual artifacts using LLM
 - Minimal self-contained OpenAI provider (no external LLM libraries)
 - Supports Jinja2-like template variables in prompts
 - Model selection and reasoning level configuration
-- Designed for CI/CD integration
+- Designed for CI/CD integration and AI agent workflows
+- Rich error messages with recovery hints for agent self-correction
 
 ## Local dev expectations
 
@@ -120,6 +122,7 @@ High-level approach.
 
 Available specs:
 
+- `coding-agent-design.md` - Agent-friendly design principles, error recovery, discoverability
 - `llm-provider.md` - LLM provider abstraction, OpenAI integration, design choices
 - `text-input.md` - Direct text input via --text option, alternative to file input
 

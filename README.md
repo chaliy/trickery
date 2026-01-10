@@ -1,10 +1,12 @@
-# Magic tool to generate things
+# Trickery
+
+Coding Agent friendly tool to magically generate text and images.
 
 [![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/banner2-direct.svg)](https://vshymanskyy.github.io/StandWithUkraine/)
 
-cli to generate textual artifacts using LLM.
+CLI for generating textual and visual artifacts using LLM. Designed for CI/CD pipelines and AI coding agents.
 
-Idea is simple, imagine you need to generate some docs using LLM as part of CI, this is a tool for you.
+Idea is simple: need to generate docs, images, or other artifacts as part of CI? This tool integrates seamlessly into scripts and agent workflows.
 
 > [!TIP]
 > This README was generated with trickery
@@ -47,6 +49,18 @@ Input file could be any text file, with Jinja2-like template variables, like `{{
 
 - [Input Images](docs/input-images.md) - Using images in multimodal prompts
 - [Image Generation](docs/image-generation.md) - Generating and editing images
+- [Coding Agent Design](specs/coding-agent-design.md) - Why this tool works well with AI agents
+
+## Agent-Friendly Design
+
+Trickery is built with AI coding agents in mind:
+
+- **Rich error messages** - Errors include context and recovery hints, so agents can self-correct
+- **Full help system** - Run `trickery help --full` for comprehensive documentation with examples
+- **Predictable output** - Use `--json` for structured output that's easy to parse
+- **Template variables** - Reproducible prompts with `{{ variable }}` substitution
+- **Auto-detection** - Input can be file path or direct text, no flags needed
+- **Exit codes** - Proper exit codes for script/agent error handling
 
 ## Українською 🇺🇦
 

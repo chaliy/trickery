@@ -12,17 +12,17 @@ Validates multimodal image input for vision-capable prompts.
 ## Steps
 
 ### 1. Image from local file
-**Run:** `trickery generate -i prompts/describe_image.md --image ./test.png`
+**Run:** `trickery generate prompts/describe_image.md --image ./test.png`
 **Expect:** LLM describes contents of the image
 
 ### 2. Image from URL
-**Run:** `trickery generate -i prompts/describe_image.md --image "https://example.com/image.jpg"`
+**Run:** `trickery generate prompts/describe_image.md --image "https://example.com/image.jpg"`
 **Expect:** LLM fetches and describes the remote image
 
 ### 3. Image detail level
-**Run:** `trickery generate -i prompts/describe_image.md --image ./test.png --image-detail high`
+**Run:** `trickery generate prompts/describe_image.md --image ./test.png --image-detail high`
 **Expect:** Higher detail analysis; may take longer and use more tokens
 
 ### 4. Multiple images
-**Run:** `trickery generate -i prompts/catalog_images.md --image ./img1.png --image ./img2.png`
+**Run:** `trickery generate prompts/catalog_images.md --image ./img1.png --image ./img2.png`
 **Expect:** LLM processes and references both images in response

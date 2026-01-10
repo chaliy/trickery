@@ -152,13 +152,12 @@ the given path, it reads from the file; otherwise treats input as direct text.
 
 **Usage:**
 ```bash
-trickery generate [INPUT]           # positional argument
-trickery generate -i <INPUT>        # or use -i flag
+trickery generate [INPUT] [OPTIONS]
 ```
 
 **Options:**
-- `<INPUT>`: Prompt input as positional arg - file path or direct text (auto-detected)
-- `-i, --input <INPUT>`: Same as positional, alternative syntax
+- `[INPUT]`: Prompt input - file path or direct text (auto-detected)
+- `-i, --input <INPUT>`: Alternative to positional (for backwards compatibility)
 - `-v, --var <KEY=VALUE>`: Variables to be used in prompt (can be repeated)
 - `-m, --model <MODEL>`: Model to use (e.g., gpt-5.2, gpt-5-mini, o1, o3-mini)
 - `-r, --reasoning <LEVEL>`: Reasoning level for o1/o3 models: low, medium, high
@@ -169,17 +168,11 @@ trickery generate -i <INPUT>        # or use -i flag
 **Examples:**
 
 ```bash
-# From a prompt file (positional)
+# From a prompt file
 trickery generate prompts/greeting.md
 
-# From a prompt file (with -i flag)
-trickery generate -i prompts/greeting.md
-
-# Direct text input (positional)
+# Direct text input
 trickery generate "Write a haiku about programming"
-
-# Direct text input (with -i flag)
-trickery generate -i "Write a haiku about programming"
 
 # Long text with shell quoting
 trickery generate "You are a helpful assistant.
@@ -211,13 +204,12 @@ at the given path, it reads from the file; otherwise treats input as direct text
 
 **Usage:**
 ```bash
-trickery image [INPUT]           # positional argument
-trickery image -i <INPUT>        # or use -i flag
+trickery image [INPUT] [OPTIONS]
 ```
 
 **Options:**
-- `<INPUT>`: Prompt input as positional arg - file path or direct text (auto-detected)
-- `-i, --input <INPUT>`: Same as positional, alternative syntax
+- `[INPUT]`: Prompt input - file path or direct text (auto-detected)
+- `-i, --input <INPUT>`: Alternative to positional (for backwards compatibility)
 - `-s, --save <FILE>`: Output file path (auto-generated if not provided)
 - `-v, --var <KEY=VALUE>`: Variables to be used in prompt (can be repeated)
 - `-m, --model <MODEL>`: Model to use (e.g., gpt-4.1, gpt-5, gpt-5.2)
@@ -232,14 +224,11 @@ trickery image -i <INPUT>        # or use -i flag
 **Examples:**
 
 ```bash
-# From a prompt file (positional)
+# From a prompt file
 trickery image prompts/logo.md
 
-# Direct text input (positional)
+# Direct text input
 trickery image "A cute cartoon cat sitting on a rainbow"
-
-# With -i flag
-trickery image -i prompts/logo.md
 
 # Long descriptive prompt
 trickery image "A professional logo for a tech startup called 'CloudSync'.
@@ -300,7 +289,7 @@ Keep it concise and friendly.
 
 **Usage:**
 ```bash
-trickery generate -i prompts/email.md --var name="Alice" --var topic="quarterly review"
+trickery generate prompts/email.md --var name="Alice" --var topic="quarterly review"
 ```
 
 ## Exit Codes
@@ -376,8 +365,8 @@ mod tests {
     fn test_full_help_contains_examples() {
         let full_help = include_str!("main.rs");
         // Verify examples are present
-        assert!(full_help.contains("trickery generate -i"));
-        assert!(full_help.contains("trickery image -i"));
+        assert!(full_help.contains("trickery generate prompts/"));
+        assert!(full_help.contains("trickery image prompts/"));
         assert!(full_help.contains("trickery completion bash"));
         assert!(full_help.contains("--var name="));
     }

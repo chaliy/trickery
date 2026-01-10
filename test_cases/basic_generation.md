@@ -10,13 +10,13 @@ Validates that trickery can generate output from a simple prompt file without va
 ## Steps
 
 ### 1. Generate from simple prompt
-**Run:** `trickery generate -i prompts/dad_jokes.md`
+**Run:** `trickery generate prompts/dad_jokes.md`
 **Expect:** LLM response printed to stdout (a dad joke)
 
 ### 2. Generate with model selection
-**Run:** `trickery generate -i prompts/dad_jokes.md -m gpt-4o-mini`
+**Run:** `trickery generate prompts/dad_jokes.md -m gpt-4o-mini`
 **Expect:** LLM response from specified model
 
 ### 3. Generate with max tokens limit
-**Run:** `trickery generate -i prompts/dad_jokes.md --max-tokens 50`
+**Run:** `trickery generate prompts/dad_jokes.md --max-tokens 50`
 **Expect:** Response truncated to approximately 50 tokens

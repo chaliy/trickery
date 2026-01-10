@@ -2,17 +2,20 @@
 
 ## Abstract
 
-Trickery's input supports both file paths and direct text, with auto-detection. If the provided value exists as a file, it reads from the file; otherwise, it treats the value as direct prompt text. Input can be provided as a positional argument or with the `-i` flag.
+Trickery's input supports both file paths and direct text, with auto-detection. If the provided value exists as a file, it reads from the file; otherwise, it treats the value as direct prompt text. Input is typically provided as a positional argument.
 
 ## Requirements
 
 ### Input Methods
 
-Two equivalent ways to provide input:
-1. **Positional argument**: `trickery generate "prompt text"`
-2. **Named option**: `trickery generate -i "prompt text"`
+Input is provided as a positional argument:
 
-Both work identically. Positional is preferred for brevity.
+```bash
+trickery generate "prompt text"
+trickery generate prompts/greeting.md
+```
+
+The `-i` flag is also supported for backwards compatibility but positional is preferred.
 
 ### Input Auto-Detection
 
@@ -26,11 +29,9 @@ Once input is provided (either way), this logic applies:
 ```bash
 # File input (file exists, content read from file)
 trickery generate prompts/greeting.md
-trickery generate -i prompts/greeting.md
 
 # Text input (not a file, used as direct prompt)
 trickery generate "Write a haiku"
-trickery generate -i "Write a haiku"
 ```
 
 - Template variables work with both: `--var name=Alice`
@@ -38,7 +39,7 @@ trickery generate -i "Write a haiku"
 
 ### Long Text Support
 
-Both positional and `-i` support:
+Positional input supports:
 
 - Multi-line strings (using shell quoting)
 - Special characters and Unicode
@@ -67,11 +68,10 @@ EOF
 
 ## Design Choices
 
-### Why support both positional and -i?
+### Why keep -i as fallback?
 
-1. Positional is more natural for quick one-liners
-2. `-i` flag maintains backwards compatibility
-3. `-i` is clearer when input looks like a flag (edge case)
+1. Backwards compatibility with older scripts
+2. Useful when input looks like a flag (edge case)
 
 ### Why auto-detect instead of separate options?
 

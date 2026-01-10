@@ -80,7 +80,7 @@ Template variables for prompt substitution.
 
 ```bash
 # Simple generation with explicit filename
-trickery image -i prompts/generate_diagram.md --save architecture.png
+trickery image -i prompts/generate_diagram.md --save docs/images/colorful-architecture.png
 
 # Auto-generated filename (e.g., generate_diagram-a3f5x.png)
 trickery image -i prompts/generate_diagram.md
@@ -92,6 +92,10 @@ trickery image -i prompts/generate_diagram.md -s architecture.png \
 ```
 
 See [prompts/generate_diagram.md](../prompts/generate_diagram.md) for the prompt template.
+
+**Result**
+
+![Result colorful architecture image](images/colorfull-architecture.png)
 
 ### Edit Existing Image
 

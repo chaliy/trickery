@@ -34,10 +34,10 @@ Unknown extensions default to PNG MIME type.
 ### Single Local Image
 
 ```bash
-trickery generate -i prompts/describe.md --image screenshot.png
+trickery generate -i prompts/describe_image.md --image test_data/example_images/image2.png
 ```
 
-Where `prompts/describe.md` contains:
+Where `prompts/describe_image.md` contains:
 ```
 Describe what you see in this image in detail.
 ```
@@ -45,53 +45,38 @@ Describe what you see in this image in detail.
 ### Image from URL
 
 ```bash
-trickery generate -i prompts/analyze.md --image https://example.com/chart.png
+trickery generate -i prompts/describe_image.md --image https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png
 ```
 
 ### Multiple Images
 
 ```bash
-trickery generate -i prompts/compare.md \
-  --image before.png \
-  --image after.png
-```
-
-Where `prompts/compare.md` contains:
-```
-Compare these two images and describe the differences.
+trickery generate -i prompts/catalog_images.md \
+  --image test_data/example_images/image1.png \
+  --image test_data/example_images/image2.png \
+  --image test_data/example_images/image3.jpg
 ```
 
 ### With Detail Level
 
 ```bash
-# High detail for detailed analysis
-trickery generate -i prompts/ocr.md --image document.png --image-detail high
-
 # Low detail for quick classification
-trickery generate -i prompts/classify.md --image photo.jpg --image-detail low
+trickery generate -i prompts/describe_image.md --image test_data/example_images/image1.png --image-detail low
 ```
 
 ### Combined with Variables
 
 ```bash
-trickery generate -i prompts/review.md \
-  --image ui-screenshot.png \
+trickery generate -i prompts/review_ui.md \
+  --image test_data/example_images/image2.png \
   --var focus="accessibility" \
   --var format="bullet points"
 ```
 
-Where `prompts/review.md` contains:
+Where `prompts/review_ui.md` contains:
 ```
 Review this UI screenshot focusing on {{ focus }}.
 Provide feedback in {{ format }}.
-```
-
-### JSON Output
-
-```bash
-trickery generate -i prompts/extract.md \
-  --image receipt.jpg \
-  --output json
 ```
 
 ## How It Works
@@ -115,7 +100,7 @@ Image support requires a vision-capable model. Recommended models:
 
 Example with explicit model:
 ```bash
-trickery generate -i prompt.md --image photo.png --model gpt-5.2
+trickery generate -i prompts/describe_image.md --image test_data/example_images/image1.png --model gpt-5.2
 ```
 
 ## Token Considerations
@@ -140,15 +125,3 @@ Common errors:
 - **Permission denied**: Check file permissions
 - **Unsupported format**: Use a supported image format
 - **API error**: Ensure your model supports vision
-
-## Example Prompt Templates
-
-### `test_cases/image_description.md`
-```
-Describe the main subject of this image in one sentence.
-```
-
-### `test_cases/image_comparison.md`
-```
-You are shown two images. Compare them and list the key differences.
-```

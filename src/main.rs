@@ -10,6 +10,7 @@ mod commands;
 mod error;
 mod output;
 mod provider;
+mod tools;
 mod trickery;
 
 const LONG_ABOUT: &str = "\
@@ -157,6 +158,11 @@ Generate text content from a prompt template file.
 - `--max-tokens <N>`: Maximum tokens in response
 - `--image <PATH|URL>`: Image files or URLs for multimodal prompts (can be repeated)
 - `--image-detail <LEVEL>`: Image detail level: auto, low, high (default: auto)
+- `--tool <TOOL>`: Enable tools for agentic generation (can be repeated)
+- `--max-iterations <N>`: Maximum iterations for agentic loop (default: 20)
+
+**Available Tools:**
+- `current_time`: Get current date/time in various formats and timezones
 
 **Examples:**
 
@@ -179,6 +185,9 @@ trickery generate -i prompts/data.md -o json
 # Multimodal with image input
 trickery generate -i prompts/describe.md --image photo.jpg
 trickery generate -i prompts/compare.md --image img1.png --image img2.png
+
+# With tool calling (agentic mode)
+trickery generate -i prompts/time-aware.md --tool current_time
 ```
 
 ### image - Generate or edit images
@@ -197,6 +206,8 @@ Generate new images or edit existing ones from a prompt template file.
 - `--background <BG>`: Background: auto, transparent, opaque
 - `--action <ACTION>`: Action: auto, generate, edit
 - `--compression <0-100>`: Compression level for jpeg/webp formats
+- `--tool <TOOL>`: Enable tools for prompt pre-processing (can be repeated)
+- `--max-iterations <N>`: Maximum iterations for tool processing (default: 20)
 
 **Examples:**
 
@@ -221,6 +232,9 @@ trickery image -i prompts/logo.md --background transparent --format png
 
 # JSON output for CI/CD
 trickery image -i prompts/asset.md -o json
+
+# With tool-enhanced prompt (uses current time in prompt)
+trickery image -i prompts/daily-art.md --tool current_time
 ```
 
 ### completion - Generate shell completions

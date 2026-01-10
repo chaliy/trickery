@@ -127,13 +127,23 @@ impl Message {
         }
     }
 
-    #[allow(dead_code)] // Part of public API for future providers
+    /// Create tool result message
     pub fn tool_result(tool_call_id: impl Into<String>, content: impl Into<String>) -> Self {
         Self {
             role: Role::Tool,
             content: Some(vec![ContentPart::text(content)]),
             tool_calls: None,
             tool_call_id: Some(tool_call_id.into()),
+        }
+    }
+
+    /// Create assistant message with tool calls (used in agentic loop)
+    pub fn assistant_with_tool_calls(tool_calls: Vec<ToolCall>) -> Self {
+        Self {
+            role: Role::Assistant,
+            content: None,
+            tool_calls: Some(tool_calls),
+            tool_call_id: None,
         }
     }
 

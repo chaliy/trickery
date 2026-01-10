@@ -43,10 +43,14 @@ src/
 ├── provider/
 │   ├── mod.rs        # Provider abstraction types (Chat + Responses API)
 │   └── openai.rs     # OpenAI provider implementation
+├── tools/
+│   ├── mod.rs        # Tool trait, registry, execution
+│   └── current_time.rs  # Current time tool implementation
 └── trickery/
     ├── mod.rs
     ├── generate.rs   # LLM template generation logic
-    └── image.rs      # Image generation logic
+    ├── image.rs      # Image generation logic
+    └── loop.rs       # Agentic loop for tool calls
 prompts/              # Example prompt templates
 test_cases/           # Test case templates for generate command
 specs/                # Feature specifications
@@ -135,6 +139,7 @@ Available test cases:
 - `image_multimodal.md` - Image input for multimodal prompts
 - `image_generate.md` - Image generation and editing command
 - `error_handling.md` - Error scenarios and messages
+- `tool_calls.md` - Tool calling and agentic generation
 
 ### Test case template
 

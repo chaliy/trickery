@@ -2,14 +2,16 @@ use crate::commands::image::ImageResult;
 use crate::provider::openai::OpenAIProvider;
 use crate::provider::{
     ImageAction, ImageBackground, ImageFormat, ImageGenerationOptions, ImageQuality, ImageSize,
-    ResponsesRequest,
+    Message, ResponsesRequest,
 };
+use crate::tools::ToolRegistry;
+use crate::trickery::r#loop::{AgentLoop, LoopConfig};
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::path::Path;
 
-use super::generate::substitute_variables;
+use super::generate::{substitute_variables, DEFAULT_MAX_ITERATIONS};
 
 /// Configuration for image generation
 #[derive(Debug, Clone, Default)]
@@ -22,6 +24,10 @@ pub struct ImageConfig {
     pub background: Option<ImageBackground>,
     pub action: Option<ImageAction>,
     pub compression: Option<u8>,
+    /// Tool names for prompt pre-processing (optional)
+    pub tool_names: Option<Vec<String>>,
+    /// Max iterations for tool processing
+    pub max_iterations: Option<u32>,
 }
 
 /// Convert an image path or URL to a format suitable for the API.
@@ -51,7 +57,34 @@ fn image_to_url(image_path: &str) -> Result<String, Box<dyn std::error::Error>> 
     Ok(format!("data:{};base64,{}", mime_type, encoded))
 }
 
+/// Process prompt with tools if specified, otherwise return as-is
+async fn process_prompt_with_tools(
+    prompt: &str,
+    tool_names: &[String],
+    max_iterations: u32,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let provider = OpenAIProvider::from_env()?;
+    let registry = ToolRegistry::with_builtins();
+
+    let loop_config = LoopConfig {
+        max_iterations,
+        model: None, // Use default model for prompt processing
+        reasoning_level: None,
+        max_tokens: None,
+    };
+
+    // Create a prompt that asks the LLM to enhance the image prompt using tools
+    let system_prompt = "You are helping to create an image generation prompt. Use the available tools to gather any information needed, then output ONLY the final image generation prompt text. Do not include any explanation or markdown formatting.";
+    let messages = vec![Message::system(system_prompt), Message::user(prompt)];
+
+    let agent = AgentLoop::new(provider, registry, loop_config);
+    let result = agent.run(messages, tool_names).await?;
+
+    Ok(result.content)
+}
+
 /// Generate image from template with variable substitution.
+/// If tools are specified, the prompt is pre-processed with an agentic loop.
 pub async fn generate_image(
     template: &str,
     input_variables: &HashMap<String, Value>,
@@ -59,7 +92,15 @@ pub async fn generate_image(
     output_path: &Path,
 ) -> Result<ImageResult, Box<dyn std::error::Error>> {
     // Substitute template variables
-    let prompt = substitute_variables(template, input_variables);
+    let mut prompt = substitute_variables(template, input_variables);
+
+    // If tools are specified, pre-process the prompt
+    if let Some(ref tool_names) = config.tool_names {
+        if !tool_names.is_empty() {
+            let max_iterations = config.max_iterations.unwrap_or(DEFAULT_MAX_ITERATIONS);
+            prompt = process_prompt_with_tools(&prompt, tool_names, max_iterations).await?;
+        }
+    }
 
     // Create provider
     let provider = OpenAIProvider::from_env()?;

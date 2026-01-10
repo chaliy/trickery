@@ -1,0 +1,65 @@
+# Test: Text Input
+
+## Abstract
+Validates that input works as positional argument with auto-detection of file vs text.
+
+## Prerequisites
+- `OPENAI_API_KEY` environment variable set
+- `cargo install --path .`
+
+## Steps
+
+### 1. Positional text input (generate)
+**Run:** `trickery generate "Tell me a short joke"`
+**Expect:** LLM response with a joke
+
+### 2. Positional file input (generate)
+**Run:** `trickery generate prompts/dad_jokes.md`
+**Expect:** LLM response based on file content
+
+### 3. Positional text input (image)
+**Run:** `trickery image "A red circle" -s /tmp/test_circle.png`
+**Expect:** Image saved to /tmp/test_circle.png
+
+### 4. Multi-line text input
+**Run:**
+```bash
+trickery generate "You are a poet.
+
+Write a haiku about:
+- The moon
+- Silence"
+```
+**Expect:** Haiku response
+
+### 5. Positional with template variables
+**Run:** `trickery generate "Hello {{ name }}!" --var name=Alice`
+**Expect:** Response references "Alice"
+
+### 6. Long text input
+**Run:**
+```bash
+trickery generate "$(cat <<'EOF'
+You are a technical writer. Please summarize:
+
+1. Rust is a systems programming language.
+2. It prevents null pointer exceptions.
+3. Cargo is the package manager.
+
+Provide a 2-sentence summary.
+EOF
+)"
+```
+**Expect:** 2-sentence summary
+
+### 7. Error: missing input
+**Run:** `trickery generate`
+**Expect:** Error about missing input
+
+### 8. Positional with model selection
+**Run:** `trickery generate "Count to 5" -m gpt-4o-mini`
+**Expect:** Response with numbers 1-5
+
+### 9. Positional with JSON output
+**Run:** `trickery generate "Say hello" -o json`
+**Expect:** JSON output with "output" field

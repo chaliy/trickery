@@ -1,6 +1,6 @@
 use clap::{Args, ValueHint};
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::path::Path;
 use tokio::fs::read_to_string;
 
 use super::super::trickery::generate::{generate_from_template, GenerateConfig};
@@ -31,14 +31,22 @@ fn parse_key_val(s: &str) -> Result<(String, Value), String> {
 }
 
 #[derive(Args)]
+#[command(
+    args_conflicts_with_subcommands = true,
+    override_usage = "trickery generate [INPUT] [OPTIONS]"
+)]
 pub struct GenerateArgs {
-    /// Path to the input prompt file
-    #[arg(short, long, value_hint = ValueHint::FilePath)]
-    input: Option<PathBuf>,
+    /// Input prompt: file path or direct text (auto-detected)
+    #[arg(index = 1, value_name = "INPUT", value_hint = ValueHint::FilePath)]
+    pub input_positional: Option<String>,
+
+    /// Input prompt: file path or direct text (auto-detected)
+    #[arg(short, long = "input", value_name = "INPUT", value_hint = ValueHint::FilePath)]
+    pub input_option: Option<String>,
 
     /// Variables to be used in prompt
     #[arg(short, long="var", value_parser = parse_key_val, number_of_values = 1)]
-    vars: Vec<(String, Value)>,
+    pub vars: Vec<(String, Value)>,
 
     /// Model to use (e.g., gpt-5.2, gpt-5-mini, o1, o3-mini)
     #[arg(short, long)]
@@ -65,29 +73,44 @@ fn parse_reasoning_level(s: &str) -> Result<ReasoningLevel, String> {
     s.parse()
 }
 
+/// Resolve input to template content.
+/// If input exists as a file, read from file; otherwise treat as direct text.
+async fn resolve_input(input: &str) -> Result<String, Box<dyn std::error::Error>> {
+    let path = Path::new(input);
+    if path.exists() {
+        read_to_string(path)
+            .await
+            .map_err(|e| format!("Failed to read input file '{}': {}", path.display(), e).into())
+    } else {
+        Ok(input.to_string())
+    }
+}
+
+impl GenerateArgs {
+    /// Get input from either positional or -i option
+    pub fn get_input(&self) -> Option<&String> {
+        self.input_positional
+            .as_ref()
+            .or(self.input_option.as_ref())
+    }
+}
+
 impl CommandExec<GenerateResult> for GenerateArgs {
     async fn exec(
         &self,
         context: &impl super::CommandExecutionContext,
     ) -> Result<Box<dyn CommandResult<GenerateResult>>, Box<dyn std::error::Error>> {
-        let input_path = match &self.input {
-            Some(path) => path,
-            None => return Err("Input file path is required".into()),
-        };
+        let input = self
+            .get_input()
+            .ok_or("Input required: use positional arg or -i (file path or text)")?;
+
+        let template = resolve_input(input).await?;
 
         let input_variables: HashMap<String, Value> = self
             .vars
             .iter()
             .map(|(k, v)| (k.clone(), v.clone()))
             .collect();
-
-        let template: String = read_to_string(input_path).await.map_err(|e| {
-            format!(
-                "Failed to read input file '{}': {}",
-                input_path.display(),
-                e
-            )
-        })?;
 
         let images: Vec<String> = self.image.clone();
 

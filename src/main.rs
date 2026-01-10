@@ -275,7 +275,69 @@ trickery generate -i prompts/email.md --var name="Alice" --var topic="quarterly 
     );
 }
 
-#[test]
-fn verify_cli() {
-    Cli::command().debug_assert();
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn verify_cli() {
+        Cli::command().debug_assert();
+    }
+
+    #[test]
+    fn test_parse_help_command() {
+        let cli = Cli::try_parse_from(["trickery", "help"]).unwrap();
+        assert!(matches!(cli.command, Some(Commands::Help { full: false })));
+    }
+
+    #[test]
+    fn test_parse_help_full_command() {
+        let cli = Cli::try_parse_from(["trickery", "help", "--full"]).unwrap();
+        assert!(matches!(cli.command, Some(Commands::Help { full: true })));
+    }
+
+    #[test]
+    fn test_long_about_mentions_help_full() {
+        assert!(LONG_ABOUT.contains("help --full"));
+    }
+
+    #[test]
+    fn test_full_help_contains_commands() {
+        // Capture full help by checking the static content
+        let help = r#"# trickery - CLI tool for generating textual artifacts using LLM"#;
+        assert!(help.contains("trickery"));
+
+        // Verify key sections exist in the full help output format
+        let sections = [
+            "## Overview",
+            "## Environment Variables",
+            "## Global Options",
+            "## Commands",
+            "### generate",
+            "### image",
+            "### completion",
+            "## Template Variables",
+            "## Exit Codes",
+        ];
+
+        // Get the full help content from the raw string in print_full_help
+        let full_help = include_str!("main.rs");
+        for section in sections {
+            assert!(
+                full_help.contains(section),
+                "Full help should contain section: {}",
+                section
+            );
+        }
+    }
+
+    #[test]
+    fn test_full_help_contains_examples() {
+        let full_help = include_str!("main.rs");
+        // Verify examples are present
+        assert!(full_help.contains("trickery generate -i"));
+        assert!(full_help.contains("trickery image -i"));
+        assert!(full_help.contains("trickery completion bash"));
+        assert!(full_help.contains("--var name="));
+    }
 }

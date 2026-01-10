@@ -2,6 +2,10 @@
 
 Coding Agent friendly tool to magically generate text and images.
 
+[![CI](https://github.com/chaliy/trickery/actions/workflows/ci.yaml/badge.svg)](https://github.com/chaliy/trickery/actions/workflows/ci.yaml)
+[![Crates.io](https://img.shields.io/crates/v/trickery)](https://crates.io/crates/trickery)
+[![Coding Agent Friendly](https://img.shields.io/badge/coding%20agent-friendly-brightgreen)](specs/coding-agent-design.md)
+
 [![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/banner2-direct.svg)](https://vshymanskyy.github.io/StandWithUkraine/)
 
 CLI for generating textual and visual artifacts using LLM. Designed for CI/CD pipelines and AI coding agents.
@@ -49,7 +53,6 @@ Input file could be any text file, with Jinja2-like template variables, like `{{
 
 - [Input Images](docs/input-images.md) - Using images in multimodal prompts
 - [Image Generation](docs/image-generation.md) - Generating and editing images
-- [Coding Agent Design](specs/coding-agent-design.md) - Why this tool works well with AI agents
 
 ## Agent-Friendly Design
 

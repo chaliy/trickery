@@ -27,7 +27,7 @@ Validates the `image` command for generating and editing images using OpenAI's R
 **Expect:** Icon generated based on substituted prompt variables
 
 ### 5. Edit existing image
-**Run:** `trickery image -i prompts/edit_image.md --image test_data/example_images/image1.png --save /tmp/edited.png -v instruction="make it black and white"`
+**Run:** `trickery image -i prompts/edit_image.md --image test_data/example_images/image1.png --save /tmp/edited.png -v instruction="make it green on pink"`
 **Expect:** Modified image saved with the requested edit applied
 
 ### 6. Transparent background

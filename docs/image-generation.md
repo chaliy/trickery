@@ -105,7 +105,7 @@ trickery image -i prompts/make_realistic.md \
 trickery image -i prompts/edit_image.md \
   --image test_data/example_images/image2.png \
   --save modified.png \
-  -v instruction="make it black and white"
+  -v instruction="make it green on pink"
 ```
 
 See [prompts/make_realistic.md](../prompts/make_realistic.md) and [prompts/edit_image.md](../prompts/edit_image.md).

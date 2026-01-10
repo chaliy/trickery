@@ -22,11 +22,11 @@ designed for CI/CD integration.
 ENVIRONMENT VARIABLES:
   OPENAI_API_KEY    Required. Your OpenAI API key for authentication.
 
-For comprehensive help with all options and examples, use: trickery help-full";
+For comprehensive help with all options and examples, use: trickery help --full";
 
 /// Magic tool to generate things
 #[derive(Parser)]
-#[command(author, version, about, long_about = LONG_ABOUT)]
+#[command(author, version, about, long_about = LONG_ABOUT, disable_help_subcommand = true)]
 pub struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
@@ -52,8 +52,12 @@ pub enum Commands {
         #[arg(index = 1, value_enum)]
         shell: Shell,
     },
-    /// Print comprehensive help with all options and examples
-    HelpFull,
+    /// Print help information
+    Help {
+        /// Print comprehensive help with all options and examples
+        #[arg(long)]
+        full: bool,
+    },
 }
 
 impl Cli {
@@ -102,8 +106,12 @@ async fn main() {
             eprintln!("Generating completion file for {shell}...");
             generate(*shell, &mut cmd, name, &mut io::stdout());
         }
-        Some(Commands::HelpFull) => {
-            print_full_help();
+        Some(Commands::Help { full }) => {
+            if *full {
+                print_full_help();
+            } else {
+                Cli::command().print_help().unwrap();
+            }
         }
         None => {}
     }

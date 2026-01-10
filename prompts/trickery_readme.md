@@ -26,7 +26,7 @@ Idea is simple, imagine you need to generate some docs using LLM as part of CI, 
 If you have rust/cargo installed, you can install `trickery` with:
 
 ```sh
-cargo install --git https://github.com/chaliy/trickery.git
+cargo install trickery
 trickery --help
 ```
 

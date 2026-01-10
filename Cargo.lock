@@ -1438,6 +1438,7 @@ dependencies = [
  "clap",
  "clap_complete",
  "mockito",
+ "rand",
  "reqwest",
  "serde",
  "serde_json",

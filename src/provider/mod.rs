@@ -268,6 +268,224 @@ pub struct Usage {
     pub total_tokens: u32,
 }
 
+// ============================================================================
+// Responses API types (for image generation tool)
+// ============================================================================
+
+/// Image size options
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum ImageSize {
+    #[default]
+    Auto,
+    #[serde(rename = "1024x1024")]
+    Square,
+    #[serde(rename = "1024x1536")]
+    Portrait,
+    #[serde(rename = "1536x1024")]
+    Landscape,
+}
+
+impl std::str::FromStr for ImageSize {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "auto" => Ok(Self::Auto),
+            "1024x1024" | "square" => Ok(Self::Square),
+            "1024x1536" | "portrait" => Ok(Self::Portrait),
+            "1536x1024" | "landscape" => Ok(Self::Landscape),
+            _ => Err(format!(
+                "Invalid image size: {s}. Use: auto, 1024x1024, 1024x1536, 1536x1024"
+            )),
+        }
+    }
+}
+
+impl std::fmt::Display for ImageSize {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Auto => write!(f, "auto"),
+            Self::Square => write!(f, "1024x1024"),
+            Self::Portrait => write!(f, "1024x1536"),
+            Self::Landscape => write!(f, "1536x1024"),
+        }
+    }
+}
+
+/// Image quality options
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum ImageQuality {
+    #[default]
+    Auto,
+    Low,
+    Medium,
+    High,
+}
+
+impl std::str::FromStr for ImageQuality {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "auto" => Ok(Self::Auto),
+            "low" => Ok(Self::Low),
+            "medium" => Ok(Self::Medium),
+            "high" => Ok(Self::High),
+            _ => Err(format!(
+                "Invalid image quality: {s}. Use: auto, low, medium, high"
+            )),
+        }
+    }
+}
+
+/// Image output format
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum ImageFormat {
+    #[default]
+    Png,
+    Jpeg,
+    Webp,
+}
+
+impl std::str::FromStr for ImageFormat {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "png" => Ok(Self::Png),
+            "jpeg" | "jpg" => Ok(Self::Jpeg),
+            "webp" => Ok(Self::Webp),
+            _ => Err(format!("Invalid image format: {s}. Use: png, jpeg, webp")),
+        }
+    }
+}
+
+/// Image background options
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum ImageBackground {
+    #[default]
+    Auto,
+    Transparent,
+    Opaque,
+}
+
+impl std::str::FromStr for ImageBackground {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "auto" => Ok(Self::Auto),
+            "transparent" => Ok(Self::Transparent),
+            "opaque" => Ok(Self::Opaque),
+            _ => Err(format!(
+                "Invalid image background: {s}. Use: auto, transparent, opaque"
+            )),
+        }
+    }
+}
+
+/// Image generation action
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum ImageAction {
+    #[default]
+    Auto,
+    Generate,
+    Edit,
+}
+
+impl std::str::FromStr for ImageAction {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "auto" => Ok(Self::Auto),
+            "generate" => Ok(Self::Generate),
+            "edit" => Ok(Self::Edit),
+            _ => Err(format!(
+                "Invalid image action: {s}. Use: auto, generate, edit"
+            )),
+        }
+    }
+}
+
+/// Image generation tool configuration
+#[derive(Debug, Clone, Default)]
+pub struct ImageGenerationOptions {
+    pub size: Option<ImageSize>,
+    pub quality: Option<ImageQuality>,
+    pub output_format: Option<ImageFormat>,
+    pub background: Option<ImageBackground>,
+    pub action: Option<ImageAction>,
+    pub compression: Option<u8>,
+}
+
+/// Input content for Responses API
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+#[allow(dead_code)] // Part of public API for structured input
+pub enum ResponseInputContent {
+    InputText { text: String },
+    InputImage { image_url: String },
+}
+
+/// Input item for Responses API
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "role", rename_all = "snake_case")]
+#[allow(dead_code)] // Part of public API for structured input
+pub enum ResponseInputItem {
+    User { content: Vec<ResponseInputContent> },
+}
+
+/// Request for Responses API
+#[derive(Debug, Clone, Default)]
+pub struct ResponsesRequest {
+    pub model: Option<String>,
+    pub input: String,
+    pub input_images: Option<Vec<String>>,
+    pub image_options: ImageGenerationOptions,
+}
+
+impl ResponsesRequest {
+    pub fn new(input: impl Into<String>) -> Self {
+        Self {
+            input: input.into(),
+            ..Default::default()
+        }
+    }
+
+    pub fn with_model(mut self, model: impl Into<String>) -> Self {
+        self.model = Some(model.into());
+        self
+    }
+
+    pub fn with_images(mut self, images: Vec<String>) -> Self {
+        self.input_images = Some(images);
+        self
+    }
+
+    pub fn with_options(mut self, options: ImageGenerationOptions) -> Self {
+        self.image_options = options;
+        self
+    }
+}
+
+/// Output from image generation call
+#[derive(Debug, Clone)]
+#[allow(dead_code)] // Fields are part of public API
+pub struct ImageGenerationResult {
+    pub id: String,
+    pub result: String, // base64 image data
+    pub revised_prompt: Option<String>,
+}
+
+/// Response from Responses API
+#[derive(Debug, Clone)]
+#[allow(dead_code)] // Fields are part of public API
+pub struct ResponsesResponse {
+    pub id: String,
+    pub images: Vec<ImageGenerationResult>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -2,8 +2,8 @@
 // Env vars: OPENAI_API_KEY (required), OPENAI_BASE_URL (optional, default: https://api.openai.com/v1)
 
 use super::{
-    CompletionRequest, CompletionResponse, ContentPart, FunctionCall, ProviderError,
-    ReasoningLevel, Tool, ToolCall, Usage,
+    CompletionRequest, CompletionResponse, ContentPart, FunctionCall, ImageGenerationResult,
+    ProviderError, ReasoningLevel, ResponsesRequest, ResponsesResponse, Tool, ToolCall, Usage,
 };
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -11,6 +11,7 @@ use std::env;
 
 const DEFAULT_BASE_URL: &str = "https://api.openai.com/v1";
 const DEFAULT_MODEL: &str = "gpt-5-mini";
+const DEFAULT_IMAGE_MODEL: &str = "gpt-4.1";
 
 /// OpenAI API client
 pub struct OpenAIProvider {
@@ -148,6 +149,114 @@ impl OpenAIProvider {
                     total_tokens: u.total_tokens,
                 })
                 .unwrap_or_default(),
+        })
+    }
+
+    /// Generate images using the Responses API with image_generation tool
+    pub async fn create_response(
+        &self,
+        request: ResponsesRequest,
+    ) -> Result<ResponsesResponse, ProviderError> {
+        let model = request
+            .model
+            .as_deref()
+            .unwrap_or(DEFAULT_IMAGE_MODEL)
+            .to_string();
+
+        // Build image generation tool with options
+        let mut tool = serde_json::json!({
+            "type": "image_generation"
+        });
+
+        let opts = &request.image_options;
+        if let Some(ref size) = opts.size {
+            tool["size"] = serde_json::json!(size.to_string());
+        }
+        if let Some(ref quality) = opts.quality {
+            tool["quality"] = serde_json::json!(quality);
+        }
+        if let Some(ref format) = opts.output_format {
+            tool["output_format"] = serde_json::json!(format);
+        }
+        if let Some(ref background) = opts.background {
+            tool["background"] = serde_json::json!(background);
+        }
+        if let Some(ref action) = opts.action {
+            tool["action"] = serde_json::json!(action);
+        }
+        if let Some(compression) = opts.compression {
+            tool["output_compression"] = serde_json::json!(compression);
+        }
+
+        // Build input - either simple string or array with images
+        let input = if let Some(ref images) = request.input_images {
+            let mut content = vec![serde_json::json!({
+                "type": "input_text",
+                "text": request.input
+            })];
+
+            for image_url in images {
+                content.push(serde_json::json!({
+                    "type": "input_image",
+                    "image_url": image_url
+                }));
+            }
+
+            serde_json::json!([{
+                "role": "user",
+                "content": content
+            }])
+        } else {
+            serde_json::json!(request.input)
+        };
+
+        let api_request = serde_json::json!({
+            "model": model,
+            "input": input,
+            "tools": [tool]
+        });
+
+        let url = format!("{}/responses", self.base_url);
+        let response = self
+            .client
+            .post(&url)
+            .header("Authorization", format!("Bearer {}", self.api_key))
+            .header("Content-Type", "application/json")
+            .json(&api_request)
+            .send()
+            .await?;
+
+        let status = response.status();
+        if !status.is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(ProviderError::Api {
+                status: status.as_u16(),
+                message: error_text,
+            });
+        }
+
+        let api_response: ResponsesApiResponse = response.json().await?;
+
+        // Extract image generation results from output
+        let images = api_response
+            .output
+            .into_iter()
+            .filter_map(|item| {
+                if item.output_type == "image_generation_call" {
+                    Some(ImageGenerationResult {
+                        id: item.id.unwrap_or_default(),
+                        result: item.result.unwrap_or_default(),
+                        revised_prompt: item.revised_prompt,
+                    })
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        Ok(ResponsesResponse {
+            id: api_response.id,
+            images,
         })
     }
 }
@@ -305,6 +414,23 @@ struct OpenAIUsage {
     prompt_tokens: u32,
     completion_tokens: u32,
     total_tokens: u32,
+}
+
+// Responses API types
+
+#[derive(Debug, Deserialize)]
+struct ResponsesApiResponse {
+    id: String,
+    output: Vec<ResponsesOutputItem>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ResponsesOutputItem {
+    #[serde(rename = "type")]
+    output_type: String,
+    id: Option<String>,
+    result: Option<String>,
+    revised_prompt: Option<String>,
 }
 
 #[cfg(test)]

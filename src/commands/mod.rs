@@ -2,6 +2,7 @@ use crate::Cli;
 use serde::ser;
 
 pub mod generate;
+pub mod image;
 
 pub trait CommandExecutionContext {
     fn get_cli(&self) -> &Cli;

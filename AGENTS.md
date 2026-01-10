@@ -15,11 +15,13 @@ Critical Thinking Fix root cause (not band-aid). Unsure: read more code; if stil
 
 ## Top level requirements
 
-- CLI tool for generating textual artifacts using LLM
+- Coding Agent friendly tool to magically generate text and images
+- CLI for generating textual and visual artifacts using LLM
 - Minimal self-contained OpenAI provider (no external LLM libraries)
 - Supports Jinja2-like template variables in prompts
 - Model selection and reasoning level configuration
-- Designed for CI/CD integration
+- Designed for CI/CD integration and AI agent workflows
+- Rich error messages with recovery hints for agent self-correction
 
 ## Local dev expectations
 
@@ -74,6 +76,7 @@ CI is implemented using GitHub Actions (`.github/workflows/ci.yaml`):
 4. Build: Ensure `cargo build` succeeds
 5. Full help: If CLI options changed, update `print_full_help()` in `src/main.rs`
 6. Lockfile: Run `cargo update --workspace` after version bumps or dependency changes to sync Cargo.lock
+7. README: If README needs changes, update `prompts/trickery_readme.md` and regenerate with `trickery generate ./prompts/trickery_readme.md > README.md`
 
 ## Commit message conventions
 
@@ -120,6 +123,7 @@ High-level approach.
 
 Available specs:
 
+- `coding-agent-design.md` - Agent-friendly design principles, error recovery, discoverability
 - `llm-provider.md` - LLM provider abstraction, OpenAI integration, design choices
 - `text-input.md` - Direct text input via --text option, alternative to file input
 

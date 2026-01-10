@@ -53,8 +53,8 @@ pub struct GenerateArgs {
     max_tokens: Option<u32>,
 
     /// Image files or URLs to include in the prompt (can be specified multiple times)
-    #[arg(long, value_hint = ValueHint::FilePath)]
-    image: Vec<PathBuf>,
+    #[arg(long)]
+    image: Vec<String>,
 
     /// Image detail level: auto, low, high (default: auto)
     #[arg(long, default_value = "auto")]
@@ -83,11 +83,7 @@ impl CommandExec<GenerateResult> for GenerateArgs {
 
         let template: String = read_to_string(input_path).await?;
 
-        let images: Vec<String> = self
-            .image
-            .iter()
-            .map(|p| p.to_string_lossy().to_string())
-            .collect();
+        let images: Vec<String> = self.image.clone();
 
         let config = GenerateConfig {
             model: self.model.clone(),

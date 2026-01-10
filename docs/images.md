@@ -1,6 +1,6 @@
 # Image Support
 
-Trickery supports multimodal prompts with images, allowing you to send images alongside text prompts to vision-capable LLMs like GPT-4o.
+Trickery supports multimodal prompts with images, allowing you to send images alongside text prompts to vision-capable LLMs like GPT-5.
 
 ## CLI Arguments
 
@@ -110,13 +110,12 @@ trickery generate -i prompts/extract.md \
 ## Model Requirements
 
 Image support requires a vision-capable model. Recommended models:
-- `gpt-4o` (default if not specified)
-- `gpt-4o-mini`
-- `gpt-4-turbo`
+- `gpt-5-mini` (default)
+- `gpt-5.2`
 
 Example with explicit model:
 ```bash
-trickery generate -i prompt.md --image photo.png --model gpt-4o
+trickery generate -i prompt.md --image photo.png --model gpt-5.2
 ```
 
 ## Token Considerations

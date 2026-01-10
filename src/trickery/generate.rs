@@ -153,14 +153,14 @@ mod tests {
     #[test]
     fn test_generate_config_with_values() {
         let config = GenerateConfig {
-            model: Some("gpt-4o".to_string()),
+            model: Some("gpt-5.2".to_string()),
             reasoning_level: Some(ReasoningLevel::High),
             tools: None,
             max_tokens: Some(1000),
             images: None,
             image_detail: None,
         };
-        assert_eq!(config.model, Some("gpt-4o".to_string()));
+        assert_eq!(config.model, Some("gpt-5.2".to_string()));
         assert_eq!(config.reasoning_level, Some(ReasoningLevel::High));
     }
 

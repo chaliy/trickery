@@ -6,7 +6,7 @@ Validates the `image` command for generating and editing images using OpenAI's R
 ## Prerequisites
 - `OPENAI_API_KEY` environment variable set
 - `cargo install --path .`
-- Test image available for edit tests (e.g., `test.png`)
+- Test images in `test_data/example_images/` (image1.png, image2.png, image3.jpg)
 
 ## Steps
 
@@ -27,7 +27,7 @@ Validates the `image` command for generating and editing images using OpenAI's R
 **Expect:** Icon generated based on substituted prompt variables
 
 ### 5. Edit existing image
-**Run:** `trickery image -i prompts/edit_image.md --image ./test.png --save /tmp/edited.png -v instruction="make it black and white"`
+**Run:** `trickery image -i prompts/edit_image.md --image test_data/example_images/image1.png --save /tmp/edited.png -v instruction="make it black and white"`
 **Expect:** Modified image saved with the requested edit applied
 
 ### 6. Transparent background
@@ -39,7 +39,7 @@ Validates the `image` command for generating and editing images using OpenAI's R
 **Expect:** JSON output with `output_path` and `revised_prompt` fields
 
 ### 8. Multiple input images
-**Run:** `trickery image -i prompts/edit_image.md --image ./bg.png --image ./fg.png --save /tmp/composite.png -v instruction="combine these images"`
+**Run:** `trickery image -i prompts/edit_image.md --image test_data/example_images/image1.png --image test_data/example_images/image2.png --save /tmp/composite.png -v instruction="combine these images"`
 **Expect:** Image generated using both input images as context
 
 ### 9. Auto-generated filename
@@ -49,3 +49,7 @@ Validates the `image` command for generating and editing images using OpenAI's R
 ### 10. Short flag for save
 **Run:** `trickery image -i prompts/generate_diagram.md -s /tmp/short.png`
 **Expect:** Image saved to `/tmp/short.png` using short `-s` flag
+
+### 11. Highlight humans in image
+**Run:** `trickery image -i prompts/highlight_humans.md --image test_data/example_images/image3.jpg --save /tmp/highlighted.png`
+**Expect:** Image with red circles around humans and numbered labels

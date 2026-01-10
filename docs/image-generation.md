@@ -80,104 +80,83 @@ Template variables for prompt substitution.
 
 ```bash
 # Simple generation with explicit filename
-trickery image -i prompts/diagram.md --save architecture.png
+trickery image -i prompts/generate_diagram.md --save architecture.png
 
-# Auto-generated filename (e.g., diagram-a3f5x.png)
-trickery image -i prompts/diagram.md
+# Auto-generated filename (e.g., generate_diagram-a3f5x.png)
+trickery image -i prompts/generate_diagram.md
 
 # With quality settings
-trickery image -i prompts/diagram.md -s architecture.png \
+trickery image -i prompts/generate_diagram.md -s architecture.png \
   --size 1536x1024 \
   --quality high
 ```
 
-Where `prompts/diagram.md` contains:
-```
-Draw a system architecture diagram showing a web app with:
-- Frontend (React)
-- Backend API (Node.js)
-- Database (PostgreSQL)
-- Cache layer (Redis)
-
-Use a clean, professional style with labeled boxes and arrows.
-```
+See [prompts/generate_diagram.md](../prompts/generate_diagram.md) for the prompt template.
 
 ### Edit Existing Image
 
 ```bash
 # Make an image look realistic
 trickery image -i prompts/make_realistic.md \
-  --image input.jpg \
+  --image test_data/example_images/image1.png \
   --save output.png
 
-# Add elements to an image
-trickery image -i prompts/add_element.md \
-  --image photo.jpg \
+# Edit with custom instruction
+trickery image -i prompts/edit_image.md \
+  --image test_data/example_images/image2.png \
   --save modified.png \
-  --action edit
+  -v instruction="make it black and white"
 ```
 
-Where `prompts/make_realistic.md` contains:
-```
-Edit this image to make it look photorealistic.
-Preserve the composition but enhance details and lighting.
-```
+See [prompts/make_realistic.md](../prompts/make_realistic.md) and [prompts/edit_image.md](../prompts/edit_image.md).
 
 ### Highlight Areas in Image
 
 ```bash
-trickery image -i prompts/highlight.md \
-  --image team_photo.jpg \
+trickery image -i prompts/highlight_humans.md \
+  --image test_data/example_images/image3.jpg \
   --save highlighted.png
 ```
 
-Where `prompts/highlight.md` contains:
-```
-In this image, draw red circles around all people's faces.
-Add numbered labels (1, 2, 3...) next to each circle.
-```
+See [prompts/highlight_humans.md](../prompts/highlight_humans.md) for the prompt template.
 
 ### With Template Variables
 
 ```bash
 trickery image -i prompts/generate_icon.md \
   --save icon.png \
-  --var subject="rocket" \
-  --var style="flat design" \
-  --var color="blue"
+  -v subject="rocket" \
+  -v style="flat design"
 ```
 
-Where `prompts/generate_icon.md` contains:
-```
-Generate an icon of a {{ subject }}.
-Style: {{ style }}
-Primary color: {{ color }}
-Size: 512x512, centered, with padding.
-```
+See [prompts/generate_icon.md](../prompts/generate_icon.md) for the prompt template.
 
 ### Multiple Input Images
 
 ```bash
 # Combine elements from multiple images
-trickery image -i prompts/combine.md \
-  --image background.jpg \
-  --image subject.png \
-  --save composite.png
+trickery image -i prompts/edit_image.md \
+  --image test_data/example_images/image1.png \
+  --image test_data/example_images/image2.png \
+  --save composite.png \
+  -v instruction="combine these images into one scene"
 ```
 
 ### Transparent Background
 
 ```bash
-trickery image -i prompts/logo.md \
+trickery image -i prompts/generate_icon.md \
   --save logo.png \
   --background transparent \
-  --format png
+  --format png \
+  -v subject="star" \
+  -v style="simple outline"
 ```
 
 ### JSON Output
 
 ```bash
-trickery image -i prompts/diagram.md --save result.png -o json
+trickery image -i prompts/generate_diagram.md --save result.png -o json
 ```
 
 Output:

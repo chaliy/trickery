@@ -132,6 +132,7 @@ Available test cases:
 - `template_variables.md` - Jinja2-style variable substitution
 - `json_output.md` - JSON output format flag
 - `image_multimodal.md` - Image input for multimodal prompts
+- `image_generate.md` - Image generation and editing command
 - `error_handling.md` - Error scenarios and messages
 
 ### Test case template

@@ -8,9 +8,9 @@ Trickery supports generating and editing images using OpenAI's Responses API wit
 
 Path to the prompt template file. Supports Jinja2-style `{{ variable }}` substitution.
 
-### `--out <PATH>` (required)
+### `--save <PATH>` / `-s <PATH>` (optional)
 
-Output file path for the generated image.
+Output file path for the generated image. If not provided, a filename is auto-generated from the input file name with a random 5-character suffix (e.g., `diagram-a3f5x.png`).
 
 ### `--image <PATH_OR_URL>`
 
@@ -79,11 +79,14 @@ Template variables for prompt substitution.
 ### Generate from Description
 
 ```bash
-# Simple generation
-trickery image -i prompts/diagram.md --out architecture.png
+# Simple generation with explicit filename
+trickery image -i prompts/diagram.md --save architecture.png
+
+# Auto-generated filename (e.g., diagram-a3f5x.png)
+trickery image -i prompts/diagram.md
 
 # With quality settings
-trickery image -i prompts/diagram.md --out architecture.png \
+trickery image -i prompts/diagram.md -s architecture.png \
   --size 1536x1024 \
   --quality high
 ```
@@ -105,12 +108,12 @@ Use a clean, professional style with labeled boxes and arrows.
 # Make an image look realistic
 trickery image -i prompts/make_realistic.md \
   --image input.jpg \
-  --out output.png
+  --save output.png
 
 # Add elements to an image
 trickery image -i prompts/add_element.md \
   --image photo.jpg \
-  --out modified.png \
+  --save modified.png \
   --action edit
 ```
 
@@ -125,7 +128,7 @@ Preserve the composition but enhance details and lighting.
 ```bash
 trickery image -i prompts/highlight.md \
   --image team_photo.jpg \
-  --out highlighted.png
+  --save highlighted.png
 ```
 
 Where `prompts/highlight.md` contains:
@@ -138,7 +141,7 @@ Add numbered labels (1, 2, 3...) next to each circle.
 
 ```bash
 trickery image -i prompts/generate_icon.md \
-  --out icon.png \
+  --save icon.png \
   --var subject="rocket" \
   --var style="flat design" \
   --var color="blue"
@@ -159,14 +162,14 @@ Size: 512x512, centered, with padding.
 trickery image -i prompts/combine.md \
   --image background.jpg \
   --image subject.png \
-  --out composite.png
+  --save composite.png
 ```
 
 ### Transparent Background
 
 ```bash
 trickery image -i prompts/logo.md \
-  --out logo.png \
+  --save logo.png \
   --background transparent \
   --format png
 ```
@@ -174,7 +177,7 @@ trickery image -i prompts/logo.md \
 ### JSON Output
 
 ```bash
-trickery image -i prompts/diagram.md --out result.png -o json
+trickery image -i prompts/diagram.md --save result.png -o json
 ```
 
 Output:

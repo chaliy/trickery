@@ -1,8 +1,9 @@
 use clap::{Args, ValueHint};
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tokio::fs::read_to_string;
 
 use super::{CommandExec, CommandResult};
@@ -51,15 +52,38 @@ fn parse_image_action(s: &str) -> Result<ImageAction, String> {
     s.parse()
 }
 
+/// Generate output filename from input path with random suffix.
+/// E.g., "prompts/diagram.md" -> "diagram-a3f5x.png"
+fn generate_output_filename(input_path: &Path, format: Option<&ImageFormat>) -> PathBuf {
+    let stem = input_path
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("image");
+
+    let suffix: String = rand::rng()
+        .sample_iter(&rand::distr::Alphanumeric)
+        .take(5)
+        .map(char::from)
+        .collect();
+
+    let ext = match format {
+        Some(ImageFormat::Jpeg) => "jpg",
+        Some(ImageFormat::Webp) => "webp",
+        _ => "png",
+    };
+
+    PathBuf::from(format!("{}-{}.{}", stem, suffix.to_lowercase(), ext))
+}
+
 #[derive(Args)]
 pub struct ImageArgs {
     /// Path to the input prompt file
     #[arg(short, long, value_hint = ValueHint::FilePath)]
     input: Option<PathBuf>,
 
-    /// Output file path for the generated image
-    #[arg(long = "out", value_hint = ValueHint::FilePath)]
-    out_file: PathBuf,
+    /// Output file path for the generated image (auto-generated if not provided)
+    #[arg(short, long, value_hint = ValueHint::FilePath)]
+    save: Option<PathBuf>,
 
     /// Variables to be used in prompt
     #[arg(short, long="var", value_parser = parse_key_val, number_of_values = 1)]
@@ -137,14 +161,20 @@ impl CommandExec<ImageResult> for ImageArgs {
             compression: self.compression,
         };
 
-        let result = generate_image(&template, &input_variables, config, &self.out_file).await?;
+        // Use provided save path or auto-generate from input filename
+        let output_path = match &self.save {
+            Some(path) => path.clone(),
+            None => generate_output_filename(input_path, self.format.as_ref()),
+        };
+
+        let result = generate_image(&template, &input_variables, config, &output_path).await?;
 
         if context.get_cli().is_interactive() {
-            println!("Image saved to: {}", self.out_file.display());
+            println!("Image saved to: {}", output_path.display());
             if let Some(ref revised) = result.revised_prompt {
                 println!("Revised prompt: {}", revised);
             }
-        };
+        }
 
         Ok(Box::from(result))
     }
@@ -214,5 +244,49 @@ mod tests {
         );
         assert_eq!(parse_image_action("edit").unwrap(), ImageAction::Edit);
         assert!(parse_image_action("invalid").is_err());
+    }
+
+    #[test]
+    fn test_generate_output_filename_default_format() {
+        let input = Path::new("prompts/diagram.md");
+        let output = generate_output_filename(input, None);
+        let filename = output.to_str().unwrap();
+
+        // Should start with stem from input
+        assert!(filename.starts_with("diagram-"));
+        // Should have 5-char random suffix and .png extension
+        assert!(filename.ends_with(".png"));
+        // Should match pattern: stem-xxxxx.png (total ~15 chars)
+        assert_eq!(filename.len(), "diagram-xxxxx.png".len());
+    }
+
+    #[test]
+    fn test_generate_output_filename_jpeg_format() {
+        let input = Path::new("icon.md");
+        let output = generate_output_filename(input, Some(&ImageFormat::Jpeg));
+        let filename = output.to_str().unwrap();
+
+        assert!(filename.starts_with("icon-"));
+        assert!(filename.ends_with(".jpg"));
+    }
+
+    #[test]
+    fn test_generate_output_filename_webp_format() {
+        let input = Path::new("test.md");
+        let output = generate_output_filename(input, Some(&ImageFormat::Webp));
+        let filename = output.to_str().unwrap();
+
+        assert!(filename.starts_with("test-"));
+        assert!(filename.ends_with(".webp"));
+    }
+
+    #[test]
+    fn test_generate_output_filename_uniqueness() {
+        let input = Path::new("test.md");
+        let output1 = generate_output_filename(input, None);
+        let output2 = generate_output_filename(input, None);
+
+        // Should generate different filenames (random suffix)
+        assert_ne!(output1, output2);
     }
 }

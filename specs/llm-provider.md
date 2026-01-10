@@ -19,9 +19,10 @@ The provider abstraction is designed to support multiple backends (OpenAI, Anthr
 
 1. **Model Selection** - Users can specify model via `-m/--model` flag
 2. **Reasoning Level** - For o1/o3 models, `-r/--reasoning` accepts: low, medium, high
-3. **Tool Calls** - Basic function calling support for structured outputs
+3. **Tool Calls** - Function calling with agentic loop support via `--tool` flag
 4. **Max Tokens** - Configurable via `--max-tokens` flag
 5. **Content Parts** - Messages use OpenAI's content parts format (text, image_url)
+6. **Agentic Loop** - Multi-turn tool execution with configurable max iterations
 
 ### Default Behavior
 
@@ -217,4 +218,78 @@ pub struct ImageGenerationResult {
     pub result: String,  // base64 image data
     pub revised_prompt: Option<String>,
 }
+```
+
+## Tool System
+
+Trickery supports an extensible tool system for agentic workflows where the LLM can call tools and use their results.
+
+### Architecture
+
+```
+src/tools/
+├── mod.rs           # Tool trait, registry, error types
+└── current_time.rs  # Built-in current_time tool
+```
+
+### Tool Trait
+
+```rust
+pub trait ToolExecutor: Send + Sync {
+    fn name(&self) -> &'static str;
+    fn definition(&self) -> Tool;
+    fn execute(&self, arguments: &str) -> Result<String, ToolError>;
+}
+```
+
+### Built-in Tools
+
+1. **current_time** - Returns current date/time
+   - Parameters: `timezone` (utc/local), `format` (iso8601/rfc2822/unix/human)
+   - Default: local timezone, ISO8601 format
+
+### Adding New Tools
+
+1. Create `src/tools/<tool_name>.rs`
+2. Implement `ToolExecutor` trait
+3. Register in `ToolRegistry::with_builtins()`
+
+### Agentic Loop
+
+The agentic loop (`src/trickery/loop.rs`) manages multi-turn conversations with tool calls:
+
+1. Send request to LLM with tool definitions
+2. If response contains tool calls, execute each tool
+3. Add tool results to messages
+4. Continue until LLM responds without tool calls or max iterations reached
+
+```rust
+pub struct LoopConfig {
+    pub max_iterations: u32,  // Default: 20
+    pub model: Option<String>,
+    pub reasoning_level: Option<ReasoningLevel>,
+    pub max_tokens: Option<u32>,
+}
+```
+
+### CLI Usage
+
+```bash
+# Generate with tools
+trickery generate -i prompt.md --tool current_time
+
+# Multiple tools
+trickery generate -i prompt.md --tool current_time --tool other_tool
+
+# Custom max iterations
+trickery generate -i prompt.md --tool current_time --max-iterations 10
+```
+
+### Image Command Tool Support
+
+For image generation, tools are used to pre-process the prompt before sending to the image API:
+
+```bash
+# The prompt is first processed with tools, then the result is used for image generation
+trickery image -i prompt.md --tool current_time
 ```

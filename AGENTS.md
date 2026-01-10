@@ -45,10 +45,14 @@ src/
 ├── provider/
 │   ├── mod.rs        # Provider abstraction types (Chat + Responses API)
 │   └── openai.rs     # OpenAI provider implementation
+├── tools/
+│   ├── mod.rs        # Tool trait, registry, execution
+│   └── current_time.rs  # Current time tool implementation
 └── trickery/
     ├── mod.rs
     ├── generate.rs   # LLM template generation logic
-    └── image.rs      # Image generation logic
+    ├── image.rs      # Image generation logic
+    └── loop.rs       # Agentic loop for tool calls
 prompts/              # Example prompt templates
 test_cases/           # Test case templates for generate command
 specs/                # Feature specifications
@@ -142,22 +146,9 @@ Available test cases:
 - `image_generate.md` - Image generation and editing command
 - `error_handling.md` - Error scenarios and messages
 - `text_input.md` - Direct text input via --text option
+- `tool_calls.md` - Tool calling and agentic generation
 
 ### Test case template
-
-```markdown
-# Test: <Name>
-
-## Abstract
-<One sentence describing what this test validates>
-
-## Prerequisites
-- `cargo install --path .`
-- <Other required setup, env vars, files>
-
-## Steps
-
-### 1. <Step name>
 **Run:** `trickery <command>`
 **Expect:** <Expected outcome>
 ```

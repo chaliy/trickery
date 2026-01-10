@@ -10,6 +10,7 @@ mod commands;
 mod error;
 mod output;
 mod provider;
+mod tools;
 mod trickery;
 
 const LONG_ABOUT: &str = "\
@@ -164,6 +165,11 @@ trickery generate [INPUT] [OPTIONS]
 - `--max-tokens <N>`: Maximum tokens in response
 - `--image <PATH|URL>`: Image files or URLs for multimodal prompts (can be repeated)
 - `--image-detail <LEVEL>`: Image detail level: auto, low, high (default: auto)
+- `--tool <TOOL>`: Enable tools for agentic generation (can be repeated)
+- `--max-iterations <N>`: Maximum iterations for agentic loop (default: 20)
+
+**Available Tools:**
+- `current_time`: Get current date/time in various formats and timezones
 
 **Examples:**
 
@@ -195,6 +201,9 @@ trickery generate "Generate a JSON object" -o json
 
 # Multimodal with image input
 trickery generate "What is in this image?" --image photo.jpg
+
+# With tool calling (agentic mode)
+trickery generate "Tell a dad joke about the current time" --tool current_time
 ```
 
 ### image - Generate or edit images
@@ -220,6 +229,8 @@ trickery image [INPUT] [OPTIONS]
 - `--background <BG>`: Background: auto, transparent, opaque
 - `--action <ACTION>`: Action: auto, generate, edit
 - `--compression <0-100>`: Compression level for jpeg/webp formats
+- `--tool <TOOL>`: Enable tools for prompt pre-processing (can be repeated)
+- `--max-iterations <N>`: Maximum iterations for tool processing (default: 20)
 
 **Examples:**
 
@@ -251,6 +262,9 @@ trickery image "Simple app icon" --background transparent --format png
 
 # JSON output for CI/CD
 trickery image prompts/asset.md -o json
+
+# With tool-enhanced prompt (uses current time in prompt)
+trickery image "Art representing the current time of day" --tool current_time
 ```
 
 ### completion - Generate shell completions

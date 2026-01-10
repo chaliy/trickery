@@ -3,9 +3,12 @@ use serde::{Deserialize, Serialize};
 use std::path::Path;
 use tokio::fs::read_to_string;
 
-use super::super::trickery::generate::{generate_from_template, GenerateConfig};
+use super::super::trickery::generate::{
+    generate_from_template, GenerateConfig, DEFAULT_MAX_ITERATIONS,
+};
 use super::{CommandExec, CommandResult};
 use crate::provider::ReasoningLevel;
+use crate::tools::ToolRegistry;
 use serde_json::Value;
 use std::collections::HashMap;
 
@@ -67,6 +70,15 @@ pub struct GenerateArgs {
     /// Image detail level: auto, low, high (default: auto)
     #[arg(long, default_value = "auto")]
     image_detail: String,
+
+    /// Enable tools for agentic generation (can be specified multiple times)
+    /// Available tools: current_time
+    #[arg(long = "tool", value_name = "TOOL")]
+    tools: Vec<String>,
+
+    /// Maximum iterations for agentic loop (default: 20)
+    #[arg(long, default_value_t = DEFAULT_MAX_ITERATIONS)]
+    max_iterations: u32,
 }
 
 fn parse_reasoning_level(s: &str) -> Result<ReasoningLevel, String> {
@@ -114,10 +126,29 @@ impl CommandExec<GenerateResult> for GenerateArgs {
 
         let images: Vec<String> = self.image.clone();
 
+        // Validate tool names
+        let tool_names = if self.tools.is_empty() {
+            None
+        } else {
+            let registry = ToolRegistry::with_builtins();
+            let available = registry.available_tools();
+            for tool in &self.tools {
+                if !available.contains(&tool.as_str()) {
+                    return Err(format!(
+                        "Unknown tool '{}'. Available tools: {}",
+                        tool,
+                        available.join(", ")
+                    )
+                    .into());
+                }
+            }
+            Some(self.tools.clone())
+        };
+
         let config = GenerateConfig {
             model: self.model.clone(),
             reasoning_level: self.reasoning,
-            tools: None,
+            tool_names,
             max_tokens: self.max_tokens,
             images: if images.is_empty() {
                 None
@@ -125,6 +156,7 @@ impl CommandExec<GenerateResult> for GenerateArgs {
                 Some(images)
             },
             image_detail: Some(self.image_detail.clone()),
+            max_iterations: Some(self.max_iterations),
         };
 
         let output = generate_from_template(&template, &input_variables, config).await?;

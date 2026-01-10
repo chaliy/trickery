@@ -8,6 +8,8 @@ use tokio::fs::read_to_string;
 
 use super::{CommandExec, CommandResult};
 use crate::provider::{ImageAction, ImageBackground, ImageFormat, ImageQuality, ImageSize};
+use crate::tools::ToolRegistry;
+use crate::trickery::generate::DEFAULT_MAX_ITERATIONS;
 use crate::trickery::image::{generate_image, ImageConfig};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -141,6 +143,15 @@ pub struct ImageArgs {
     /// Compression level (0-100) for jpeg/webp formats
     #[arg(long)]
     compression: Option<u8>,
+
+    /// Enable tools for prompt pre-processing (can be specified multiple times)
+    /// Available tools: current_time
+    #[arg(long = "tool", value_name = "TOOL")]
+    tools: Vec<String>,
+
+    /// Maximum iterations for tool processing (default: 20)
+    #[arg(long, default_value_t = DEFAULT_MAX_ITERATIONS)]
+    max_iterations: u32,
 }
 
 impl ImageArgs {
@@ -169,6 +180,25 @@ impl CommandExec<ImageResult> for ImageArgs {
             .map(|(k, v)| (k.clone(), v.clone()))
             .collect();
 
+        // Validate tool names
+        let tool_names = if self.tools.is_empty() {
+            None
+        } else {
+            let registry = ToolRegistry::with_builtins();
+            let available = registry.available_tools();
+            for tool in &self.tools {
+                if !available.contains(&tool.as_str()) {
+                    return Err(format!(
+                        "Unknown tool '{}'. Available tools: {}",
+                        tool,
+                        available.join(", ")
+                    )
+                    .into());
+                }
+            }
+            Some(self.tools.clone())
+        };
+
         let config = ImageConfig {
             model: self.model.clone(),
             input_images: if self.image.is_empty() {
@@ -182,6 +212,8 @@ impl CommandExec<ImageResult> for ImageArgs {
             background: self.background.clone(),
             action: self.action.clone(),
             compression: self.compression,
+            tool_names,
+            max_iterations: Some(self.max_iterations),
         };
 
         // Use provided save path or auto-generate from input filename

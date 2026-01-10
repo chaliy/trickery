@@ -1,21 +1,29 @@
 use crate::provider::openai::OpenAIProvider;
-use crate::provider::{CompletionRequest, ContentPart, ImageUrl, Message, ReasoningLevel, Tool};
+use crate::provider::{CompletionRequest, ContentPart, ImageUrl, Message, ReasoningLevel};
+use crate::tools::ToolRegistry;
+use crate::trickery::r#loop::{AgentLoop, LoopConfig};
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::path::Path;
+
+/// Default max iterations for agentic loop
+pub const DEFAULT_MAX_ITERATIONS: u32 = 20;
 
 /// Configuration for template generation
 #[derive(Debug, Clone, Default)]
 pub struct GenerateConfig {
     pub model: Option<String>,
     pub reasoning_level: Option<ReasoningLevel>,
-    pub tools: Option<Vec<Tool>>,
+    /// Tool names to enable (e.g., "current_time")
+    pub tool_names: Option<Vec<String>>,
     pub max_tokens: Option<u32>,
     /// Image paths or URLs to include in the prompt
     pub images: Option<Vec<String>>,
     /// Image detail level: auto, low, high
     pub image_detail: Option<String>,
+    /// Maximum iterations for agentic loop (default: 20)
+    pub max_iterations: Option<u32>,
 }
 
 /// Convert an image path or URL to a format suitable for the API.
@@ -60,23 +68,15 @@ pub fn substitute_variables(template: &str, variables: &HashMap<String, Value>) 
     result
 }
 
-/// Generate text from template with variable substitution.
-/// Uses OpenAI provider by default.
-pub async fn generate_from_template(
-    template: &str,
-    input_variables: &HashMap<String, Value>,
-    config: GenerateConfig,
-) -> Result<String, Box<dyn std::error::Error>> {
-    // Substitute template variables BEFORE sending to provider
-    let prompt_text = substitute_variables(template, input_variables);
-
-    // Create provider and request
-    let provider = OpenAIProvider::from_env()?;
-
-    // Build message - use multimodal if images provided
-    let message = if let Some(ref images) = config.images {
-        let detail = config.image_detail.clone();
-        let mut parts = vec![ContentPart::text(&prompt_text)];
+/// Build user message from prompt text and optional images
+fn build_user_message(
+    prompt_text: &str,
+    images: Option<&Vec<String>>,
+    image_detail: Option<&String>,
+) -> Result<Message, Box<dyn std::error::Error>> {
+    if let Some(images) = images {
+        let detail = image_detail.cloned();
+        let mut parts = vec![ContentPart::text(prompt_text)];
 
         for image_path in images {
             let url = image_to_url(image_path)?;
@@ -88,34 +88,86 @@ pub async fn generate_from_template(
             });
         }
 
-        Message::user_parts(parts)
+        Ok(Message::user_parts(parts))
     } else {
-        Message::user(prompt_text)
-    };
+        Ok(Message::user(prompt_text))
+    }
+}
 
-    let mut request = CompletionRequest::new(vec![message]);
+/// Generate text from template with variable substitution.
+/// Uses OpenAI provider by default.
+/// When tools are specified, runs an agentic loop to handle tool calls.
+pub async fn generate_from_template(
+    template: &str,
+    input_variables: &HashMap<String, Value>,
+    config: GenerateConfig,
+) -> Result<String, Box<dyn std::error::Error>> {
+    // Substitute template variables BEFORE sending to provider
+    let prompt_text = substitute_variables(template, input_variables);
 
-    if let Some(model) = config.model {
-        request = request.with_model(model);
+    // Build message - use multimodal if images provided
+    let message = build_user_message(
+        &prompt_text,
+        config.images.as_ref(),
+        config.image_detail.as_ref(),
+    )?;
+
+    let messages = vec![message];
+
+    // If tools are specified, use the agentic loop
+    if let Some(ref tool_names) = config.tool_names {
+        if !tool_names.is_empty() {
+            return run_with_tools(messages, tool_names.clone(), &config).await;
+        }
+    }
+
+    // No tools - simple single-shot completion
+    run_simple_completion(messages, &config).await
+}
+
+/// Run simple completion without tools
+async fn run_simple_completion(
+    messages: Vec<Message>,
+    config: &GenerateConfig,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let provider = OpenAIProvider::from_env()?;
+
+    let mut request = CompletionRequest::new(messages);
+
+    if let Some(ref model) = config.model {
+        request = request.with_model(model.clone());
     }
     if let Some(level) = config.reasoning_level {
         request = request.with_reasoning_level(level);
-    }
-    if let Some(tools) = config.tools {
-        request = request.with_tools(tools);
     }
     if let Some(max_tokens) = config.max_tokens {
         request = request.with_max_tokens(max_tokens);
     }
 
     let response = provider.complete(request).await?;
-
-    // If we have tool calls, return them as JSON for processing
-    if let Some(tool_calls) = response.tool_calls {
-        return Ok(serde_json::to_string_pretty(&tool_calls)?);
-    }
-
     Ok(response.content.unwrap_or_default())
+}
+
+/// Run generation with tools using agentic loop
+async fn run_with_tools(
+    messages: Vec<Message>,
+    tool_names: Vec<String>,
+    config: &GenerateConfig,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let provider = OpenAIProvider::from_env()?;
+    let registry = ToolRegistry::with_builtins();
+
+    let loop_config = LoopConfig {
+        max_iterations: config.max_iterations.unwrap_or(DEFAULT_MAX_ITERATIONS),
+        model: config.model.clone(),
+        reasoning_level: config.reasoning_level,
+        max_tokens: config.max_tokens,
+    };
+
+    let agent = AgentLoop::new(provider, registry, loop_config);
+    let result = agent.run(messages, &tool_names).await?;
+
+    Ok(result.content)
 }
 
 #[cfg(test)]
@@ -148,7 +200,8 @@ mod tests {
         let config = GenerateConfig::default();
         assert!(config.model.is_none());
         assert!(config.reasoning_level.is_none());
-        assert!(config.tools.is_none());
+        assert!(config.tool_names.is_none());
+        assert!(config.max_iterations.is_none());
     }
 
     #[test]
@@ -156,13 +209,37 @@ mod tests {
         let config = GenerateConfig {
             model: Some("gpt-5.2".to_string()),
             reasoning_level: Some(ReasoningLevel::High),
-            tools: None,
+            tool_names: Some(vec!["current_time".to_string()]),
             max_tokens: Some(1000),
             images: None,
             image_detail: None,
+            max_iterations: Some(10),
         };
         assert_eq!(config.model, Some("gpt-5.2".to_string()));
         assert_eq!(config.reasoning_level, Some(ReasoningLevel::High));
+        assert_eq!(config.tool_names, Some(vec!["current_time".to_string()]));
+        assert_eq!(config.max_iterations, Some(10));
+    }
+
+    #[test]
+    fn test_default_max_iterations() {
+        assert_eq!(DEFAULT_MAX_ITERATIONS, 20);
+    }
+
+    #[test]
+    fn test_build_user_message_text_only() {
+        let msg = build_user_message("Hello", None, None).unwrap();
+        assert_eq!(msg.role, crate::provider::Role::User);
+        assert!(msg.content.is_some());
+    }
+
+    #[test]
+    fn test_build_user_message_with_images() {
+        let images = vec!["https://example.com/img.png".to_string()];
+        let detail = "high".to_string();
+        let msg = build_user_message("Describe", Some(&images), Some(&detail)).unwrap();
+        let content = msg.content.unwrap();
+        assert_eq!(content.len(), 2); // text + image
     }
 
     #[test]

@@ -259,6 +259,17 @@ mod tests {
     fn test_image_to_url_nonexistent_file() {
         let result = image_to_url("/nonexistent/path/to/image.png");
         assert!(result.is_err());
+        let err = result.unwrap_err().to_string();
+        assert!(
+            err.contains("/nonexistent/path/to/image.png"),
+            "Error should contain file path: {}",
+            err
+        );
+        assert!(
+            err.contains("Failed to read image file"),
+            "Error should indicate image file failure: {}",
+            err
+        );
     }
 
     // Multimodal message construction tests

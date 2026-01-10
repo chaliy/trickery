@@ -57,13 +57,8 @@ pub enum Role {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ContentPart {
-    Text {
-        text: String,
-    },
-    #[allow(dead_code)] // For future image support
-    ImageUrl {
-        image_url: ImageUrl,
-    },
+    Text { text: String },
+    ImageUrl { image_url: ImageUrl },
 }
 
 /// Image URL for vision models
@@ -79,7 +74,7 @@ impl ContentPart {
         Self::Text { text: text.into() }
     }
 
-    #[allow(dead_code)] // For future image support
+    #[allow(dead_code)] // Convenience API for simple image URL without detail
     pub fn image_url(url: impl Into<String>) -> Self {
         Self::ImageUrl {
             image_url: ImageUrl {
@@ -122,8 +117,7 @@ impl Message {
         }
     }
 
-    /// Create user message with multiple content parts
-    #[allow(dead_code)] // Part of public API for future providers
+    /// Create user message with multiple content parts (for multimodal messages)
     pub fn user_parts(parts: Vec<ContentPart>) -> Self {
         Self {
             role: Role::User,

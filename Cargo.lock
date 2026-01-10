@@ -1440,12 +1440,14 @@ dependencies = [
 name = "trickery"
 version = "0.1.0"
 dependencies = [
+ "base64",
  "clap",
  "clap_complete",
  "mockito",
  "reqwest",
  "serde",
  "serde_json",
+ "tempfile",
  "thiserror",
  "tokio",
 ]

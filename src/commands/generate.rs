@@ -51,6 +51,14 @@ pub struct GenerateArgs {
     /// Maximum tokens in response
     #[arg(long)]
     max_tokens: Option<u32>,
+
+    /// Image files or URLs to include in the prompt (can be specified multiple times)
+    #[arg(long)]
+    image: Vec<String>,
+
+    /// Image detail level: auto, low, high (default: auto)
+    #[arg(long, default_value = "auto")]
+    image_detail: String,
 }
 
 fn parse_reasoning_level(s: &str) -> Result<ReasoningLevel, String> {
@@ -73,13 +81,23 @@ impl CommandExec<GenerateResult> for GenerateArgs {
             .map(|(k, v)| (k.clone(), v.clone()))
             .collect();
 
-        let template: String = read_to_string(input_path).await?;
+        let template: String = read_to_string(input_path)
+            .await
+            .map_err(|e| format!("Failed to read input file '{}': {}", input_path.display(), e))?;
+
+        let images: Vec<String> = self.image.clone();
 
         let config = GenerateConfig {
             model: self.model.clone(),
             reasoning_level: self.reasoning,
             tools: None,
             max_tokens: self.max_tokens,
+            images: if images.is_empty() {
+                None
+            } else {
+                Some(images)
+            },
+            image_detail: Some(self.image_detail.clone()),
         };
 
         let output = generate_from_template(&template, &input_variables, config).await?;

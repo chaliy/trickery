@@ -52,11 +52,26 @@ fn parse_image_action(s: &str) -> Result<ImageAction, String> {
     s.parse()
 }
 
+/// Resolve input to template content.
+/// If input exists as a file, read from file; otherwise treat as direct text.
+async fn resolve_input(input: &str) -> Result<String, Box<dyn std::error::Error>> {
+    let path = Path::new(input);
+    if path.exists() {
+        read_to_string(path)
+            .await
+            .map_err(|e| format!("Failed to read input file '{}': {}", path.display(), e).into())
+    } else {
+        Ok(input.to_string())
+    }
+}
+
 /// Generate output filename with random suffix.
-/// Uses input path stem if provided, otherwise defaults to "image".
-/// E.g., "prompts/diagram.md" -> "diagram-a3f5x.png", or None -> "image-a3f5x.png"
-fn generate_output_filename(input_path: Option<&Path>, format: Option<&ImageFormat>) -> PathBuf {
-    let stem = input_path
+/// Uses input path stem if it exists as a file, otherwise defaults to "image".
+/// E.g., "prompts/diagram.md" -> "diagram-a3f5x.png", or text -> "image-a3f5x.png"
+fn generate_output_filename(input: Option<&str>, format: Option<&ImageFormat>) -> PathBuf {
+    let stem = input
+        .map(Path::new)
+        .filter(|p| p.exists())
         .and_then(|p| p.file_stem())
         .and_then(|s| s.to_str())
         .unwrap_or("image");
@@ -78,13 +93,9 @@ fn generate_output_filename(input_path: Option<&Path>, format: Option<&ImageForm
 
 #[derive(Args)]
 pub struct ImageArgs {
-    /// Path to the input prompt file
+    /// Input prompt: file path or direct text (auto-detected)
     #[arg(short, long, value_hint = ValueHint::FilePath)]
-    pub input: Option<PathBuf>,
-
-    /// Direct text input (alternative to --input file)
-    #[arg(short, long)]
-    pub text: Option<String>,
+    pub input: Option<String>,
 
     /// Output file path for the generated image (auto-generated if not provided)
     #[arg(short, long, value_hint = ValueHint::FilePath)]
@@ -132,18 +143,12 @@ impl CommandExec<ImageResult> for ImageArgs {
         &self,
         context: &impl super::CommandExecutionContext,
     ) -> Result<Box<dyn CommandResult<ImageResult>>, Box<dyn std::error::Error>> {
-        let template: String = match (&self.input, &self.text) {
-            (Some(path), None) => read_to_string(path)
-                .await
-                .map_err(|e| format!("Failed to read input file '{}': {}", path.display(), e))?,
-            (None, Some(text)) => text.clone(),
-            (Some(_), Some(_)) => {
-                return Err("Cannot specify both --input and --text".into());
-            }
-            (None, None) => {
-                return Err("Either --input or --text is required".into());
-            }
-        };
+        let input = self
+            .input
+            .as_ref()
+            .ok_or("--input is required (file path or text)")?;
+
+        let template = resolve_input(input).await?;
 
         let input_variables: HashMap<String, Value> = self
             .vars
@@ -169,7 +174,7 @@ impl CommandExec<ImageResult> for ImageArgs {
         // Use provided save path or auto-generate from input filename
         let output_path = match &self.save {
             Some(path) => path.clone(),
-            None => generate_output_filename(self.input.as_deref(), self.format.as_ref()),
+            None => generate_output_filename(Some(input), self.format.as_ref()),
         };
 
         let result = generate_image(&template, &input_variables, config, &output_path).await?;
@@ -252,44 +257,39 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_output_filename_default_format() {
-        let input = Path::new("prompts/diagram.md");
-        let output = generate_output_filename(Some(input), None);
+    fn test_generate_output_filename_existing_file() {
+        // Use Cargo.toml as a file that exists
+        let output = generate_output_filename(Some("Cargo.toml"), None);
         let filename = output.to_str().unwrap();
 
-        // Should start with stem from input
-        assert!(filename.starts_with("diagram-"));
+        // Should start with stem from input file
+        assert!(filename.starts_with("Cargo-"));
         // Should have 5-char random suffix and .png extension
         assert!(filename.ends_with(".png"));
-        // Should match pattern: stem-xxxxx.png (total ~15 chars)
-        assert_eq!(filename.len(), "diagram-xxxxx.png".len());
     }
 
     #[test]
     fn test_generate_output_filename_jpeg_format() {
-        let input = Path::new("icon.md");
-        let output = generate_output_filename(Some(input), Some(&ImageFormat::Jpeg));
+        let output = generate_output_filename(Some("Cargo.toml"), Some(&ImageFormat::Jpeg));
         let filename = output.to_str().unwrap();
 
-        assert!(filename.starts_with("icon-"));
+        assert!(filename.starts_with("Cargo-"));
         assert!(filename.ends_with(".jpg"));
     }
 
     #[test]
     fn test_generate_output_filename_webp_format() {
-        let input = Path::new("test.md");
-        let output = generate_output_filename(Some(input), Some(&ImageFormat::Webp));
+        let output = generate_output_filename(Some("Cargo.toml"), Some(&ImageFormat::Webp));
         let filename = output.to_str().unwrap();
 
-        assert!(filename.starts_with("test-"));
+        assert!(filename.starts_with("Cargo-"));
         assert!(filename.ends_with(".webp"));
     }
 
     #[test]
     fn test_generate_output_filename_uniqueness() {
-        let input = Path::new("test.md");
-        let output1 = generate_output_filename(Some(input), None);
-        let output2 = generate_output_filename(Some(input), None);
+        let output1 = generate_output_filename(Some("Cargo.toml"), None);
+        let output2 = generate_output_filename(Some("Cargo.toml"), None);
 
         // Should generate different filenames (random suffix)
         assert_ne!(output1, output2);
@@ -307,8 +307,18 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_output_filename_no_input_webp() {
-        let output = generate_output_filename(None, Some(&ImageFormat::Webp));
+    fn test_generate_output_filename_text_input() {
+        // Text input (not a file) should default to "image"
+        let output = generate_output_filename(Some("Write a haiku"), None);
+        let filename = output.to_str().unwrap();
+
+        assert!(filename.starts_with("image-"));
+        assert!(filename.ends_with(".png"));
+    }
+
+    #[test]
+    fn test_generate_output_filename_text_input_webp() {
+        let output = generate_output_filename(Some("A cat picture"), Some(&ImageFormat::Webp));
         let filename = output.to_str().unwrap();
 
         assert!(filename.starts_with("image-"));

@@ -2,32 +2,27 @@
 
 ## Abstract
 
-Trickery supports direct text input via the `--text`/`-t` option as an alternative to reading prompts from files. This enables quick one-off generations without creating temporary files, supports long multi-line prompts, and integrates with shell scripting workflows.
+Trickery's `--input` option supports both file paths and direct text, with auto-detection. If the provided value exists as a file, it reads from the file; otherwise, it treats the value as direct prompt text. This enables quick one-off generations without creating temporary files.
 
 ## Requirements
 
-### Input Options
+### Input Auto-Detection
 
-Both `generate` and `image` commands support two mutually exclusive input methods:
+The `-i, --input` option uses this logic:
+1. Check if the input value exists as a file on disk
+2. If file exists: read content from the file
+3. If file doesn't exist: use the input value directly as prompt text
 
-1. **File input** (`-i, --input <FILE>`): Read prompt from a file
-2. **Text input** (`-t, --text <TEXT>`): Use text directly as the prompt
+### Behavior
 
-### Validation Rules
-
-- Exactly one of `--input` or `--text` must be provided
-- If both are provided: error "Cannot specify both --input and --text"
-- If neither is provided: error "Either --input or --text is required"
-
-### Text Input Behavior
-
-- Text is used directly as the template content
-- Template variable substitution (`{{ var }}`) works with text input
-- For `image` command, output filename defaults to `image-xxxxx.png` when no input file
+- File input: `trickery generate -i prompts/greeting.md` reads from file
+- Text input: `trickery generate -i "Write a haiku"` uses text directly
+- Template variables work with both: `--var name=Alice`
+- For `image` command, output filename defaults to `image-xxxxx.png` when input is text
 
 ### Long Text Support
 
-The `--text` option supports:
+The `--input` option supports:
 
 - Multi-line strings (using shell quoting)
 - Special characters and Unicode
@@ -39,12 +34,12 @@ Examples of passing long text:
 
 ```bash
 # Multi-line with shell quoting
-trickery generate -t "Line 1
+trickery generate -i "Line 1
 Line 2
 Line 3"
 
 # Using heredoc
-trickery generate -t "$(cat <<'EOF'
+trickery generate -i "$(cat <<'EOF'
 You are a helpful assistant.
 
 Please analyze the following:
@@ -54,22 +49,19 @@ EOF
 )"
 
 # From pipe (when combined with xargs or similar)
-echo "Generate a poem" | xargs -I {} trickery generate -t "{}"
+echo "Generate a poem" | xargs -I {} trickery generate -i "{}"
 ```
 
 ## Design Choices
 
-### Why not stdin?
+### Why auto-detect instead of separate options?
 
-Stdin support was considered but deferred because:
-1. Adds complexity for detecting interactive vs piped input
-2. Conflicts with potential future stdin use for binary data (images)
-3. Shell heredocs and `$()` provide adequate workarounds
-4. `--text` is explicit and predictable
+1. Simpler API: one option instead of two
+2. Intuitive behavior: file paths look like file paths, text looks like text
+3. No ambiguity in practice: prompts rarely look like existing file paths
+4. Matches common patterns in other CLI tools (e.g., `curl -d`)
 
-### Short flag `-t`
+### Edge cases
 
-The `-t` short flag was chosen because:
-- Mnemonic: "t" for "text"
-- Commonly used in other CLI tools
-- Does not conflict with existing flags
+- If you have a file named "Hello world" and want to use it: the file will be read
+- If you want to use text that matches an existing filename: rename the file or use a path like `./filename`

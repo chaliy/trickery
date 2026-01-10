@@ -1,6 +1,6 @@
 use clap::{Args, ValueHint};
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::path::Path;
 use tokio::fs::read_to_string;
 
 use super::super::trickery::generate::{generate_from_template, GenerateConfig};
@@ -32,13 +32,9 @@ fn parse_key_val(s: &str) -> Result<(String, Value), String> {
 
 #[derive(Args)]
 pub struct GenerateArgs {
-    /// Path to the input prompt file
+    /// Input prompt: file path or direct text (auto-detected)
     #[arg(short, long, value_hint = ValueHint::FilePath)]
-    pub input: Option<PathBuf>,
-
-    /// Direct text input (alternative to --input file)
-    #[arg(short, long)]
-    pub text: Option<String>,
+    pub input: Option<String>,
 
     /// Variables to be used in prompt
     #[arg(short, long="var", value_parser = parse_key_val, number_of_values = 1)]
@@ -69,23 +65,30 @@ fn parse_reasoning_level(s: &str) -> Result<ReasoningLevel, String> {
     s.parse()
 }
 
+/// Resolve input to template content.
+/// If input exists as a file, read from file; otherwise treat as direct text.
+async fn resolve_input(input: &str) -> Result<String, Box<dyn std::error::Error>> {
+    let path = Path::new(input);
+    if path.exists() {
+        read_to_string(path)
+            .await
+            .map_err(|e| format!("Failed to read input file '{}': {}", path.display(), e).into())
+    } else {
+        Ok(input.to_string())
+    }
+}
+
 impl CommandExec<GenerateResult> for GenerateArgs {
     async fn exec(
         &self,
         context: &impl super::CommandExecutionContext,
     ) -> Result<Box<dyn CommandResult<GenerateResult>>, Box<dyn std::error::Error>> {
-        let template: String = match (&self.input, &self.text) {
-            (Some(path), None) => read_to_string(path)
-                .await
-                .map_err(|e| format!("Failed to read input file '{}': {}", path.display(), e))?,
-            (None, Some(text)) => text.clone(),
-            (Some(_), Some(_)) => {
-                return Err("Cannot specify both --input and --text".into());
-            }
-            (None, None) => {
-                return Err("Either --input or --text is required".into());
-            }
-        };
+        let input = self
+            .input
+            .as_ref()
+            .ok_or("--input is required (file path or text)")?;
+
+        let template = resolve_input(input).await?;
 
         let input_variables: HashMap<String, Value> = self
             .vars

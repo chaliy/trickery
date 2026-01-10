@@ -1,7 +1,7 @@
-# Test: Text Input
+# Test: Text Input (Auto-Detection)
 
 ## Abstract
-Validates direct text input via --text/-t option for generate and image commands.
+Validates that --input auto-detects file paths vs direct text input.
 
 ## Prerequisites
 - `OPENAI_API_KEY` environment variable set
@@ -9,18 +9,22 @@ Validates direct text input via --text/-t option for generate and image commands
 
 ## Steps
 
-### 1. Basic text input (generate)
-**Run:** `trickery generate -t "Tell me a short joke"`
-**Expect:** LLM response with a joke
+### 1. Text input (generate)
+**Run:** `trickery generate -i "Tell me a short joke"`
+**Expect:** LLM response with a joke (input treated as text since no such file exists)
 
-### 2. Basic text input (image)
-**Run:** `trickery image -t "A simple red circle on white background" -s /tmp/test_circle.png`
+### 2. File input (generate)
+**Run:** `trickery generate -i prompts/dad_jokes.md`
+**Expect:** LLM response based on file content (file exists, so reads from it)
+
+### 3. Text input (image)
+**Run:** `trickery image -i "A simple red circle on white background" -s /tmp/test_circle.png`
 **Expect:** Image saved to /tmp/test_circle.png
 
-### 3. Multi-line text input
+### 4. Multi-line text input
 **Run:**
 ```bash
-trickery generate -t "You are a poet.
+trickery generate -i "You are a poet.
 
 Write a haiku about:
 - The moon
@@ -28,14 +32,14 @@ Write a haiku about:
 ```
 **Expect:** Haiku response
 
-### 4. Text with template variables
-**Run:** `trickery generate -t "Hello {{ name }}, you work at {{ company }}." --var name=Alice --var company=Acme`
+### 5. Text with template variables
+**Run:** `trickery generate -i "Hello {{ name }}, you work at {{ company }}." --var name=Alice --var company=Acme`
 **Expect:** Response references "Alice" and "Acme"
 
-### 5. Long text input
+### 6. Long text input
 **Run:**
 ```bash
-trickery generate -t "$(cat <<'EOF'
+trickery generate -i "$(cat <<'EOF'
 You are a technical writer. Please summarize the following:
 
 1. Rust is a systems programming language focused on safety.
@@ -50,22 +54,18 @@ EOF
 ```
 **Expect:** 2-sentence summary of Rust features
 
-### 6. Error: both --input and --text
-**Run:** `trickery generate -i prompts/dad_jokes.md -t "Hello"`
-**Expect:** Error: "Cannot specify both --input and --text"
-
-### 7. Error: neither --input nor --text
+### 7. Error: missing --input
 **Run:** `trickery generate`
-**Expect:** Error: "Either --input or --text is required"
+**Expect:** Error about missing --input
 
 ### 8. Image with text and auto-generated filename
-**Run:** `trickery image -t "Blue square"`
-**Expect:** Image saved to image-xxxxx.png (auto-generated filename)
+**Run:** `trickery image -i "Blue square"`
+**Expect:** Image saved to image-xxxxx.png (auto-generated filename, not based on input text)
 
 ### 9. Text input with JSON output
-**Run:** `trickery generate -t "Say hello" -o json`
+**Run:** `trickery generate -i "Say hello" -o json`
 **Expect:** JSON output with "output" field
 
 ### 10. Text input with model selection
-**Run:** `trickery generate -t "Count to 5" -m gpt-4o-mini`
+**Run:** `trickery generate -i "Count to 5" -m gpt-4o-mini`
 **Expect:** Response with numbers 1-5

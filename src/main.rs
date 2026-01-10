@@ -147,11 +147,11 @@ cargo install trickery
 
 ### generate - Generate content from prompts
 
-Generate text content from a prompt template file or direct text input.
+Generate text content from a prompt. Input is auto-detected: if a file exists at
+the given path, it reads from the file; otherwise treats input as direct text.
 
 **Options:**
-- `-i, --input <FILE>`: Path to the input prompt file
-- `-t, --text <TEXT>`: Direct text input (alternative to --input file)
+- `-i, --input <INPUT>`: Prompt input - file path or direct text (auto-detected)
 - `-v, --var <KEY=VALUE>`: Variables to be used in prompt (can be repeated)
 - `-m, --model <MODEL>`: Model to use (e.g., gpt-5.2, gpt-5-mini, o1, o3-mini)
 - `-r, --reasoning <LEVEL>`: Reasoning level for o1/o3 models: low, medium, high
@@ -159,51 +159,48 @@ Generate text content from a prompt template file or direct text input.
 - `--image <PATH|URL>`: Image files or URLs for multimodal prompts (can be repeated)
 - `--image-detail <LEVEL>`: Image detail level: auto, low, high (default: auto)
 
-Note: Either `--input` or `--text` is required, but not both.
-
 **Examples:**
 
 ```bash
-# Basic generation from a prompt file
+# From a prompt file (file exists, so reads from file)
 trickery generate -i prompts/greeting.md
 
-# Direct text input (no file needed)
-trickery generate -t "Write a haiku about programming"
+# Direct text input (not a file path, so uses as text)
+trickery generate -i "Write a haiku about programming"
 
 # Long text with shell quoting
-trickery generate -t "You are a helpful assistant.
+trickery generate -i "You are a helpful assistant.
 
 Explain the following concept in simple terms:
 What is machine learning and how does it work?"
 
-# With template variables (works with both -i and -t)
+# With template variables
 trickery generate -i prompts/email.md --var name=John --var topic="Project Update"
-trickery generate -t "Hello {{ name }}, welcome to {{ company }}!" --var name=Alice --var company=Acme
+trickery generate -i "Hello {{ name }}, welcome to {{ company }}!" --var name=Alice --var company=Acme
 
 # Using a specific model
 trickery generate -i prompts/code.md -m gpt-5.2
-trickery generate -t "Explain quantum computing" -m gpt-5.2
+trickery generate -i "Explain quantum computing" -m gpt-5.2
 
 # With reasoning (for o1/o3 models)
 trickery generate -i prompts/analysis.md -m o3-mini -r high
 
 # JSON output for CI/CD
 trickery generate -i prompts/data.md -o json
-trickery generate -t "Generate a JSON object with name and age fields" -o json
+trickery generate -i "Generate a JSON object with name and age fields" -o json
 
 # Multimodal with image input
 trickery generate -i prompts/describe.md --image photo.jpg
-trickery generate -t "What is in this image?" --image photo.jpg
-trickery generate -i prompts/compare.md --image img1.png --image img2.png
+trickery generate -i "What is in this image?" --image photo.jpg
 ```
 
 ### image - Generate or edit images
 
-Generate new images or edit existing ones from a prompt template file or direct text input.
+Generate new images or edit existing ones. Input is auto-detected: if a file exists
+at the given path, it reads from the file; otherwise treats input as direct text.
 
 **Options:**
-- `-i, --input <FILE>`: Path to the input prompt file
-- `-t, --text <TEXT>`: Direct text input (alternative to --input file)
+- `-i, --input <INPUT>`: Prompt input - file path or direct text (auto-detected)
 - `-s, --save <FILE>`: Output file path (auto-generated if not provided)
 - `-v, --var <KEY=VALUE>`: Variables to be used in prompt (can be repeated)
 - `-m, --model <MODEL>`: Model to use (e.g., gpt-4.1, gpt-5, gpt-5.2)
@@ -215,45 +212,39 @@ Generate new images or edit existing ones from a prompt template file or direct 
 - `--action <ACTION>`: Action: auto, generate, edit
 - `--compression <0-100>`: Compression level for jpeg/webp formats
 
-Note: Either `--input` or `--text` is required, but not both.
-
 **Examples:**
 
 ```bash
-# Generate an image from a prompt file
+# From a prompt file
 trickery image -i prompts/logo.md
 
-# Direct text input (no file needed)
-trickery image -t "A cute cartoon cat sitting on a rainbow"
+# Direct text input
+trickery image -i "A cute cartoon cat sitting on a rainbow"
 
 # Long descriptive prompt
-trickery image -t "A professional logo for a tech startup called 'CloudSync'.
+trickery image -i "A professional logo for a tech startup called 'CloudSync'.
 Modern, minimalist design with blue and white colors.
 Should convey reliability and innovation."
 
 # Save to specific file
 trickery image -i prompts/icon.md -s output/icon.png
-trickery image -t "A simple house icon" -s icons/home.png
+trickery image -i "A simple house icon" -s icons/home.png
 
 # With template variables
 trickery image -i prompts/banner.md --var title="Welcome" --var color=blue
-trickery image -t "A {{ style }} banner with text: {{ title }}" --var style=modern --var title=Hello
+trickery image -i "A {{ style }} banner with text: {{ title }}" --var style=modern --var title=Hello
 
 # High quality landscape image
-trickery image -i prompts/landscape.md --size 1536x1024 --quality high
-trickery image -t "Beautiful mountain sunset" --size 1536x1024 --quality high
+trickery image -i "Beautiful mountain sunset" --size 1536x1024 --quality high
 
 # Edit an existing image
-trickery image -i prompts/edit.md --image original.png --action edit
-trickery image -t "Add a red hat to the person" --image photo.jpg --action edit
+trickery image -i "Add a red hat to the person" --image photo.jpg --action edit
 
 # Transparent background (for logos/icons)
-trickery image -i prompts/logo.md --background transparent --format png
-trickery image -t "Simple app icon" --background transparent --format png
+trickery image -i "Simple app icon" --background transparent --format png
 
 # JSON output for CI/CD
 trickery image -i prompts/asset.md -o json
-trickery image -t "Generate product thumbnail" -o json
 ```
 
 ### completion - Generate shell completions
@@ -375,49 +366,46 @@ mod tests {
     }
 
     #[test]
-    fn test_full_help_contains_text_option() {
+    fn test_full_help_contains_auto_detect() {
         let full_help = include_str!("main.rs");
-        // Verify --text option is documented
-        assert!(full_help.contains("-t, --text"));
-        assert!(full_help.contains("trickery generate -t"));
-        assert!(full_help.contains("trickery image -t"));
+        // Verify auto-detection is documented
+        assert!(full_help.contains("auto-detected"));
+        assert!(full_help.contains("file path or direct text"));
     }
 
     #[test]
-    fn test_parse_generate_with_text() {
-        let cli = Cli::try_parse_from(["trickery", "generate", "-t", "Hello world"]).unwrap();
-        if let Some(Commands::Generate(args)) = cli.command {
-            assert!(args.input.is_none());
-            assert_eq!(args.text, Some("Hello world".to_string()));
-        } else {
-            panic!("Expected Generate command");
-        }
-    }
-
-    #[test]
-    fn test_parse_generate_with_input() {
+    fn test_parse_generate_with_input_file() {
         let cli = Cli::try_parse_from(["trickery", "generate", "-i", "prompts/test.md"]).unwrap();
         if let Some(Commands::Generate(args)) = cli.command {
-            assert!(args.input.is_some());
-            assert!(args.text.is_none());
+            assert_eq!(args.input, Some("prompts/test.md".to_string()));
         } else {
             panic!("Expected Generate command");
         }
     }
 
     #[test]
-    fn test_parse_generate_with_text_and_vars() {
+    fn test_parse_generate_with_input_text() {
+        let cli = Cli::try_parse_from(["trickery", "generate", "-i", "Hello world"]).unwrap();
+        if let Some(Commands::Generate(args)) = cli.command {
+            assert_eq!(args.input, Some("Hello world".to_string()));
+        } else {
+            panic!("Expected Generate command");
+        }
+    }
+
+    #[test]
+    fn test_parse_generate_with_input_and_vars() {
         let cli = Cli::try_parse_from([
             "trickery",
             "generate",
-            "-t",
+            "-i",
             "Hello {{ name }}",
             "--var",
             "name=Alice",
         ])
         .unwrap();
         if let Some(Commands::Generate(args)) = cli.command {
-            assert_eq!(args.text, Some("Hello {{ name }}".to_string()));
+            assert_eq!(args.input, Some("Hello {{ name }}".to_string()));
             assert_eq!(args.vars.len(), 1);
         } else {
             panic!("Expected Generate command");
@@ -425,23 +413,22 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_image_with_text() {
-        let cli = Cli::try_parse_from(["trickery", "image", "-t", "A red circle"]).unwrap();
+    fn test_parse_image_with_input_text() {
+        let cli = Cli::try_parse_from(["trickery", "image", "-i", "A red circle"]).unwrap();
         if let Some(Commands::Image(args)) = cli.command {
-            assert!(args.input.is_none());
-            assert_eq!(args.text, Some("A red circle".to_string()));
+            assert_eq!(args.input, Some("A red circle".to_string()));
         } else {
             panic!("Expected Image command");
         }
     }
 
     #[test]
-    fn test_parse_image_with_text_and_save() {
+    fn test_parse_image_with_input_and_save() {
         let cli =
-            Cli::try_parse_from(["trickery", "image", "-t", "Blue square", "-s", "output.png"])
+            Cli::try_parse_from(["trickery", "image", "-i", "Blue square", "-s", "output.png"])
                 .unwrap();
         if let Some(Commands::Image(args)) = cli.command {
-            assert_eq!(args.text, Some("Blue square".to_string()));
+            assert_eq!(args.input, Some("Blue square".to_string()));
             assert!(args.save.is_some());
         } else {
             panic!("Expected Image command");
@@ -449,11 +436,11 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_generate_with_long_text() {
+    fn test_parse_generate_with_long_input() {
         let long_text = "This is a very long prompt.\n\nIt has multiple lines.\n\nAnd lots of content that should be handled correctly by the CLI parser.";
-        let cli = Cli::try_parse_from(["trickery", "generate", "-t", long_text]).unwrap();
+        let cli = Cli::try_parse_from(["trickery", "generate", "-i", long_text]).unwrap();
         if let Some(Commands::Generate(args)) = cli.command {
-            assert_eq!(args.text, Some(long_text.to_string()));
+            assert_eq!(args.input, Some(long_text.to_string()));
         } else {
             panic!("Expected Generate command");
         }

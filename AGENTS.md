@@ -78,6 +78,10 @@ CI is implemented using GitHub Actions (`.github/workflows/ci.yaml`):
 6. Lockfile: Run `cargo update --workspace` after version bumps or dependency changes to sync Cargo.lock
 7. README: If README needs changes, update `prompts/trickery_readme.md` and regenerate with `trickery generate ./prompts/trickery_readme.md > README.md`
 
+## Attribution
+
+NEVER add links to Claude sessions in PR body or commits. Also never attribute commit or merge commit to coding agents, always use real user.
+
 ## Commit message conventions
 
 Follow Conventional Commits format:

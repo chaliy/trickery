@@ -12,17 +12,17 @@ keywords = ["cli", "llm", "openai", "template", "codegen"]
 categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
-clap = { version = "^4.5.43", features = ["derive"] }
-serde_json = "^1.0.132"
-serde = { version = "^1.0.215", features = ["derive"] }
-tokio = { version = "^1.47.1", features = ["macros", "rt-multi-thread", "fs"] }
-clap_complete = "^4.5.55"
+clap = { version = "^4.5.61", features = ["derive"] }
+serde_json = "^1.0.150"
+serde = { version = "^1.0.228", features = ["derive"] }
+tokio = { version = "^1.52.3", features = ["macros", "rt-multi-thread", "fs"] }
+clap_complete = "^4.5.67"
 reqwest = { version = "^0.13", features = ["json"] }
 thiserror = "^2.0"
 base64 = "^0.22"
 rand = "^0.9"
 
 [dev-dependencies]
-mockito = "^1.6"
-tempfile = "^3.15"
+mockito = "^1.7"
+tempfile = "^3.27"
 

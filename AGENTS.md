@@ -99,17 +99,26 @@ Follow Conventional Commits format:
 
 PR titles should follow Conventional Commits format: `<type>[optional scope]: <description>`
 
+Center the description on functional change and impact, not a code-location
+walkthrough (the diff shows that). Add a Before / After with proof — CLI output,
+logs, or screenshots for UI — whenever behavior changes. The repo ships a matching
+`.github/pull_request_template.md`.
+
 ### PR body template
 
 ```markdown
-## What
-Clear description of the change.
+## What changed
+Describe the change functionally — what behavior changes and its impact. Lead with
+outcomes; don't walk through code locations, the diff shows where and how. Keep any
+code-level notes short and specific.
 
 ## Why
 Problem or motivation.
 
-## How
-High-level approach.
+## Before / After
+Show the effect with evidence. Include before and after whenever behavior changes —
+CLI output, logs, or screenshots for UI (attach working screenshots when possible).
+For changes with no observable behavior (pure refactor, docs), say so.
 
 ## Risk
 - Low / Medium / High

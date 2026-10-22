@@ -65,6 +65,30 @@ class PackageReleaseTests(unittest.TestCase):
                     release.package(root, binary, "aarch64-apple-darwin", root / "dist")
             self.assertFalse((root / "dist").exists())
 
+    def test_lock_differing_from_committed_bytes_is_not_packaged(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "Cargo.toml").write_text('[package]\nversion = "0.1.4"\n')
+            (root / "Cargo.lock").write_text('[[package]]\nname = "trickery"\nversion = "0.1.4"\n')
+            (root / "LICENSE").write_text("MIT")
+            (root / "README.md").write_text("readme")
+            binary = root / "trickery.exe"
+            binary.write_bytes(b"native fixture")
+
+            def run(*args):
+                if args[-1] == "--version":
+                    return "trickery 0.1.4"
+                if args[-1] == "HEAD:Cargo.lock":
+                    return "committed-lock-blob"
+                if "hash-object" in args:
+                    return "different-working-lock-blob"
+                return "fixture"
+
+            with patch.object(release, "run", side_effect=run):
+                with self.assertRaisesRegex(ValueError, "differs from committed"):
+                    release.package(root, binary, "x86_64-pc-windows-msvc", root / "dist")
+            self.assertFalse((root / "dist").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

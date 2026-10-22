@@ -20,6 +20,9 @@ do not require a Rust installation. CLI behavior is unchanged in 0.1.4.
 
 The native workflow uses Rust 1.99.0 and `cargo build --release --locked`.
 It does not publish a crate, create a tag, or upload release assets.
+The packager rejects a working lockfile whose raw bytes differ from the
+committed file. Repository attributes keep `Cargo.lock` on LF line endings
+on every host, including Windows.
 
 | Archive target | Native build/test host | Runtime evidence |
 | --- | --- | --- |

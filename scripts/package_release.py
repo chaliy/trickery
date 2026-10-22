@@ -36,6 +36,10 @@ def package(root, binary, target, output):
     run(str(binary), "--help")
 
     lock_path = root / "Cargo.lock"
+    committed_blob = run("git", "-C", str(root), "rev-parse", "HEAD:Cargo.lock")
+    working_blob = run("git", "-C", str(root), "hash-object", "--no-filters", str(lock_path))
+    if committed_blob != working_blob:
+        raise ValueError("build Cargo.lock differs from committed source bytes")
     lock = tomllib.loads(lock_path.read_text())
     manifest = {
         "version": version,

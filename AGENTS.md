@@ -65,8 +65,13 @@ docs/                 # Feature documentation
 
 CI is implemented using GitHub Actions (`.github/workflows/ci.yaml`):
 - Runs on push/PR to main
-- Executes `cargo build --verbose`
-- Executes `cargo test --verbose`
+- Executes `cargo build --verbose --locked`
+- Executes `cargo test --verbose --locked`
+- Tests the stdlib Python release packager
+
+Release preparation is documented in `RELEASING.md`. The native build workflow
+uses the committed lockfile, records source/ABI provenance, and smoke-tests
+the binaries extracted from their actual archives. It never publishes.
 
 ## Pre-PR checklist
 

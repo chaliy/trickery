@@ -1,0 +1,80 @@
+name: Native binaries
+
+on:
+  pull_request:
+    paths:
+      - Cargo.toml
+      - Cargo.lock
+      - src/**
+      - scripts/**
+      - .github/workflows/native-build.yaml
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Exact reviewed source commit to build
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  CARGO_BUILD_JOBS: '1'
+  CARGO_INCREMENTAL: '0'
+  CARGO_PROFILE_DEV_DEBUG: '0'
+  CARGO_PROFILE_TEST_DEBUG: '0'
+  MACOSX_DEPLOYMENT_TARGET: '11.0'
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            binary: trickery
+          - runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            binary: trickery
+          - runner: macos-14
+            target: aarch64-apple-darwin
+            binary: trickery
+          - runner: macos-15-intel
+            target: x86_64-apple-darwin
+            binary: trickery
+          - runner: windows-2022
+            target: x86_64-pc-windows-msvc
+            binary: trickery.exe
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.source_sha || github.sha }}
+      - uses: dtolnay/rust-toolchain@1.99.0
+        with:
+          targets: ${{ matrix.target }}
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: '3.12'
+      - name: Test native target with the committed lockfile
+        run: cargo test --locked --target ${{ matrix.target }}
+      - name: Build native release with the committed lockfile
+        run: cargo build --release --locked --target ${{ matrix.target }}
+      - name: Package and smoke-test the actual archive
+        run: python scripts/package_release.py --binary target/${{ matrix.target }}/release/${{ matrix.binary }} --target ${{ matrix.target }}
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: trickery-${{ matrix.target }}
+          path: dist/*
+          if-no-files-found: error
+
+  msrv:
+    name: Rust 1.85 minimum compiler
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.source_sha || github.sha }}
+      - uses: dtolnay/rust-toolchain@1.85.0
+      - run: cargo check --locked --target x86_64-unknown-linux-gnu

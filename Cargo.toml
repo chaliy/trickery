@@ -1,8 +1,8 @@
 [package]
 name = "trickery"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2021"
-rust-version = "1.75"
+rust-version = "1.85"
 description = "CLI tool for generating textual artifacts using LLM"
 authors = ["Mykhailo Chalyi"]
 license-file = "LICENSE"
